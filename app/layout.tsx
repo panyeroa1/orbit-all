@@ -1,6 +1,6 @@
 import { ClerkProvider } from "@clerk/nextjs";
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
+import { Roboto } from "next/font/google";
 import type { PropsWithChildren } from "react";
 
 import "@stream-io/video-react-sdk/dist/css/styles.css";
@@ -12,7 +12,11 @@ import { cn } from "@/lib/utils";
 
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+const roboto = Roboto({
+  subsets: ["latin"],
+  weight: ["400", "500", "700"],
+  display: "swap",
+});
 
 export const viewport: Viewport = {
   themeColor: "#0E78F9",
@@ -39,7 +43,7 @@ const AppLayout = ({ children }: Readonly<PropsWithChildren>) => {
           },
         }}
       >
-        <body className={cn("bg-dark-2", inter.className)}>
+        <body className={cn("min-h-screen w-full bg-dark-2", roboto.className)}>
           {children}
           <Toaster />
         </body>

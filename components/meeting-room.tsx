@@ -11,6 +11,7 @@ import {
   useCallStateHooks,
 } from "@stream-io/video-react-sdk";
 import { Languages, LayoutList, Users } from "lucide-react";
+import { useUser } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -43,6 +44,7 @@ export const MeetingRoom = () => {
   const [isTranslatorOpen, setIsTranslatorOpen] = useState(false);
 
   const call = useCall();
+  const { user, isLoaded } = useUser();
 
   const { useCallCallingState, useLocalParticipant } = useCallStateHooks();
   const callingState = useCallCallingState();
@@ -54,6 +56,15 @@ export const MeetingRoom = () => {
   );
   const targetLang = useTranslatorStore((state) => state.targetLang);
   const speakerLang = useTranslatorStore((state) => state.speakerLang);
+  const setEnabled = useTranslatorStore((state) => state.setEnabled);
+  const setAutoTranslateEnabled = useTranslatorStore(
+    (state) => state.setAutoTranslateEnabled
+  );
+  const setTargetLang = useTranslatorStore((state) => state.setTargetLang);
+  const setShowOriginal = useTranslatorStore((state) => state.setShowOriginal);
+  const setSpeakerLang = useTranslatorStore((state) => state.setSpeakerLang);
+  const setTtsEnabled = useTranslatorStore((state) => state.setTtsEnabled);
+  const setTtsVoice = useTranslatorStore((state) => state.setTtsVoice);
   const upsertCaption = useTranslatorStore((state) => state.upsertCaption);
   const updateCaptionTranslation = useTranslatorStore(
     (state) => state.updateCaptionTranslation
@@ -73,6 +84,7 @@ export const MeetingRoom = () => {
     >()
   );
   const inflightTranslationRef = useRef(new Set<string>());
+  const prefsLoadedRef = useRef(false);
 
   const isPersonalRoom = !!searchParams.get("personal");
   const translatorIndicatorEnabled = captionsEnabled || autoTranslateEnabled;
@@ -87,6 +99,48 @@ export const MeetingRoom = () => {
         return <SpeakerLayout participantsBarPosition="right" />;
     }
   };
+
+  useEffect(() => {
+    if (!isLoaded || prefsLoadedRef.current) return;
+
+    const prefs = (user?.unsafeMetadata as Record<string, unknown> | undefined)
+      ?.translatorPrefs;
+    if (prefs && typeof prefs === "object") {
+      const data = prefs as Record<string, unknown>;
+
+      if (typeof data.enabled === "boolean") setEnabled(data.enabled);
+      if (typeof data.autoTranslateEnabled === "boolean") {
+        setAutoTranslateEnabled(data.autoTranslateEnabled);
+      }
+      if (typeof data.targetLang === "string" && data.targetLang) {
+        setTargetLang(data.targetLang);
+      }
+      if (typeof data.showOriginal === "boolean") {
+        setShowOriginal(data.showOriginal);
+      }
+      if (typeof data.speakerLang === "string" && data.speakerLang) {
+        setSpeakerLang(data.speakerLang);
+      }
+      if (typeof data.ttsEnabled === "boolean") {
+        setTtsEnabled(data.ttsEnabled);
+      }
+      if (typeof data.ttsVoice === "string") {
+        setTtsVoice(data.ttsVoice);
+      }
+    }
+
+    prefsLoadedRef.current = true;
+  }, [
+    isLoaded,
+    user,
+    setAutoTranslateEnabled,
+    setEnabled,
+    setShowOriginal,
+    setSpeakerLang,
+    setTargetLang,
+    setTtsEnabled,
+    setTtsVoice,
+  ]);
 
   useEffect(() => {
     if (callingState !== CallingState.JOINED) {
