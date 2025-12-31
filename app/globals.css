@@ -27,30 +27,29 @@ body::before {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  background:
-    radial-gradient(70% 50% at 10% 10%, rgba(25, 58, 86, 0.55), transparent 60%),
-    radial-gradient(60% 40% at 90% 20%, rgba(34, 25, 58, 0.45), transparent 65%),
-    radial-gradient(80% 55% at 50% 100%, rgba(12, 34, 46, 0.6), transparent 70%),
-    repeating-linear-gradient(
-      -12deg,
-      rgba(255, 255, 255, 0.06) 0px,
-      rgba(255, 255, 255, 0.04) 2px,
-      transparent 8px,
-      transparent 22px
-    );
-  filter: saturate(1.1) contrast(1.05);
-  animation: wave-drift 24s ease-in-out infinite;
+  background-color: #050607;
+  background-image:
+    radial-gradient(1px 1px at 12% 18%, rgba(255, 255, 255, 0.7) 0, transparent 2px),
+    radial-gradient(1px 1px at 28% 72%, rgba(255, 255, 255, 0.55) 0, transparent 2px),
+    radial-gradient(1px 1px at 46% 26%, rgba(255, 255, 255, 0.65) 0, transparent 2px),
+    radial-gradient(1px 1px at 62% 80%, rgba(255, 255, 255, 0.6) 0, transparent 2px),
+    radial-gradient(1px 1px at 78% 32%, rgba(255, 255, 255, 0.5) 0, transparent 2px),
+    radial-gradient(1px 1px at 88% 64%, rgba(255, 255, 255, 0.6) 0, transparent 2px),
+    radial-gradient(2px 2px at 20% 40%, rgba(255, 255, 255, 0.35) 0, transparent 3px),
+    radial-gradient(2px 2px at 72% 14%, rgba(255, 255, 255, 0.4) 0, transparent 3px),
+    radial-gradient(2px 2px at 55% 58%, rgba(255, 255, 255, 0.4) 0, transparent 3px),
+    radial-gradient(2px 2px at 36% 86%, rgba(255, 255, 255, 0.3) 0, transparent 3px);
+  animation: star-glimmer 8s ease-in-out infinite alternate;
 }
 
-@keyframes wave-drift {
+@keyframes star-glimmer {
   0% {
-    background-position: 0% 0%, 100% 0%, 50% 100%, 0% 0%;
-  }
-  50% {
-    background-position: 10% 8%, 90% 12%, 48% 95%, 4% 10%;
+    opacity: 0.6;
+    filter: drop-shadow(0 0 0 rgba(255, 255, 255, 0));
   }
   100% {
-    background-position: 0% 0%, 100% 0%, 50% 100%, 0% 0%;
+    opacity: 0.95;
+    filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.15));
   }
 }
 
@@ -61,7 +60,17 @@ body::before {
 }
 
 .str-video__speaker-layout__wrapper {
-  max-height: 700px;
+  max-height: none;
+  height: 100%;
+}
+
+.str-video__participant-view {
+  max-width: none;
+  border-radius: 16px;
+}
+
+.str-video__call {
+  background-color: transparent;
 }
 
 .str-video__participant-details {
@@ -77,15 +86,40 @@ body::before {
 }
 
 .str-video__participant-list {
-  background-color: #1c1f2e;
+  background-color: rgba(7, 8, 10, 0.9);
   padding: 10px;
   border-radius: 10px;
   color: white;
   height: 100%;
 }
 
+.str-video__call-controls {
+  gap: 12px;
+  padding: 0;
+  background: transparent;
+}
+
 .str-video__call-controls__button {
-  height: 40px;
+  height: 44px;
+  width: 44px;
+  border-radius: 5px;
+  background-color: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  transition: background-color 150ms ease, transform 150ms ease;
+}
+
+.str-video__call-controls__button:hover {
+  background-color: rgba(255, 255, 255, 0.16);
+  transform: translateY(-1px);
+}
+
+.str-video__call-controls__button--danger {
+  background-color: rgba(228, 72, 80, 0.85);
+  border-color: rgba(228, 72, 80, 0.9);
+}
+
+.str-video__call-controls__button--danger:hover {
+  background-color: rgba(228, 72, 80, 1);
 }
 
 .glassmorphism {

@@ -1,26 +1,11 @@
 "use client";
 
+import {
+  SPEAKER_LANGUAGES,
+  TARGET_LANGUAGES,
+} from "@/constants/languages";
 import { Input } from "@/components/ui/input";
 import { useTranslatorStore } from "@/store/use-translator";
-
-const TARGET_LANGUAGES = [
-  { value: "en", label: "English" },
-  { value: "es", label: "Spanish" },
-  { value: "fr", label: "French" },
-  { value: "de", label: "German" },
-  { value: "it", label: "Italian" },
-  { value: "pt", label: "Portuguese" },
-  { value: "pt-BR", label: "Portuguese (Brazil)" },
-  { value: "ja", label: "Japanese" },
-  { value: "ko", label: "Korean" },
-  { value: "zh", label: "Chinese (Simplified)" },
-  { value: "tl", label: "Tagalog" },
-];
-
-const SPEAKER_LANGUAGES = [
-  { value: "auto", label: "Auto detect" },
-  ...TARGET_LANGUAGES,
-];
 
 export const TranslatorSettingsForm = () => {
   const enabled = useTranslatorStore((state) => state.enabled);
@@ -46,15 +31,21 @@ export const TranslatorSettingsForm = () => {
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-[#0F1720] px-4 py-3">
         <div>
-          <p className="text-sm font-semibold text-white">
+          <label
+            htmlFor="translator-enabled"
+            className="text-sm font-semibold text-white"
+          >
             Enable Live Captions
-          </p>
+          </label>
           <p className="text-xs text-white/60">
             Broadcast your speech as captions to the call.
           </p>
         </div>
         <input
+          id="translator-enabled"
           type="checkbox"
+          aria-label="Enable live captions"
+          title="Enable live captions"
           checked={enabled}
           onChange={(event) => setEnabled(event.target.checked)}
           className="size-5 accent-emerald-500"
@@ -63,15 +54,21 @@ export const TranslatorSettingsForm = () => {
 
       <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-[#0F1720] px-4 py-3">
         <div>
-          <p className="text-sm font-semibold text-white">
+          <label
+            htmlFor="translator-auto"
+            className="text-sm font-semibold text-white"
+          >
             Auto-translate captions
-          </p>
+          </label>
           <p className="text-xs text-white/60">
             Translate incoming captions to your target language.
           </p>
         </div>
         <input
+          id="translator-auto"
           type="checkbox"
+          aria-label="Auto-translate captions"
+          title="Auto-translate captions"
           checked={autoTranslateEnabled}
           onChange={(event) => setAutoTranslateEnabled(event.target.checked)}
           className="size-5 accent-sky-500"
@@ -79,10 +76,16 @@ export const TranslatorSettingsForm = () => {
       </div>
 
       <div className="rounded-xl border border-white/10 bg-[#0F1720] px-4 py-3">
-        <label className="text-sm font-semibold text-white">
+        <label
+          htmlFor="translator-target-lang"
+          className="text-sm font-semibold text-white"
+        >
           My target language
         </label>
         <select
+          id="translator-target-lang"
+          aria-label="My target language"
+          title="My target language"
           value={targetLang}
           onChange={(event) => setTargetLang(event.target.value)}
           className="mt-2 w-full rounded-lg border border-white/10 bg-[#101b24] px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-sky-500/60"
@@ -97,13 +100,21 @@ export const TranslatorSettingsForm = () => {
 
       <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-[#0F1720] px-4 py-3">
         <div>
-          <p className="text-sm font-semibold text-white">Show original text</p>
+          <label
+            htmlFor="translator-show-original"
+            className="text-sm font-semibold text-white"
+          >
+            Show original text
+          </label>
           <p className="text-xs text-white/60">
             Display the original caption under the translation.
           </p>
         </div>
         <input
+          id="translator-show-original"
           type="checkbox"
+          aria-label="Show original text"
+          title="Show original text"
           checked={showOriginal}
           onChange={(event) => setShowOriginal(event.target.checked)}
           className="size-5 accent-amber-500"
@@ -111,10 +122,16 @@ export const TranslatorSettingsForm = () => {
       </div>
 
       <div className="rounded-xl border border-white/10 bg-[#0F1720] px-4 py-3">
-        <label className="text-sm font-semibold text-white">
+        <label
+          htmlFor="translator-speaker-lang"
+          className="text-sm font-semibold text-white"
+        >
           Speaker language
         </label>
         <select
+          id="translator-speaker-lang"
+          aria-label="Speaker language"
+          title="Speaker language"
           value={speakerLang}
           onChange={(event) => setSpeakerLang(event.target.value)}
           className="mt-2 w-full rounded-lg border border-white/10 bg-[#101b24] px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/60"
@@ -129,13 +146,21 @@ export const TranslatorSettingsForm = () => {
 
       <div className="flex items-center justify-between gap-4 rounded-xl border border-white/10 bg-[#0F1720] px-4 py-3">
         <div>
-          <p className="text-sm font-semibold text-white">Read aloud captions</p>
+          <label
+            htmlFor="translator-tts"
+            className="text-sm font-semibold text-white"
+          >
+            Read aloud captions
+          </label>
           <p className="text-xs text-white/60">
             Use Gemini Live Audio to speak captions locally.
           </p>
         </div>
         <input
+          id="translator-tts"
           type="checkbox"
+          aria-label="Read aloud captions"
+          title="Read aloud captions"
           checked={ttsEnabled}
           onChange={(event) => setTtsEnabled(event.target.checked)}
           className="size-5 accent-violet-500"
@@ -143,10 +168,16 @@ export const TranslatorSettingsForm = () => {
       </div>
 
       <div className="rounded-xl border border-white/10 bg-[#0F1720] px-4 py-3">
-        <label className="text-sm font-semibold text-white">
+        <label
+          htmlFor="translator-voice"
+          className="text-sm font-semibold text-white"
+        >
           Gemini voice (optional)
         </label>
         <Input
+          id="translator-voice"
+          aria-label="Gemini voice"
+          title="Gemini voice"
           value={ttsVoice}
           onChange={(event) => setTtsVoice(event.target.value)}
           placeholder="e.g. Orus"

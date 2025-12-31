@@ -29,18 +29,20 @@ export const MobileNav = () => {
           />
         </SheetTrigger>
 
-        <SheetContent side="left" className="border-none bg-dark-1">
+        <SheetContent side="left" className="border-none bg-black">
           <SheetClose asChild>
             <Link href="/" className="flex items-center gap-1">
               <Image
-                src="/icons/logo.svg"
-                alt="Eburon logo"
+                src="/images/logo.png"
+                alt="Orbit logo"
                 width={32}
                 height={32}
                 className="max-sm:size-10"
               />
 
-              <p className="text-[26px] font-extrabold text-white">Eburon</p>
+              <p className="text-[26px] font-extrabold tracking-wide text-white">
+                Orbit
+              </p>
             </Link>
           </SheetClose>
 

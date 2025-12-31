@@ -8,18 +8,18 @@ import { MobileNav } from "./mobile-nav";
 
 export const Navbar = () => {
   return (
-    <nav className="flex-between fixed z-50 w-full bg-dark-1 px-6 py-4 lg:px-10">
+    <nav className="flex-between fixed z-50 w-full border-b border-white/5 bg-black/70 px-6 py-4 backdrop-blur-lg lg:px-10">
       <Link href="/" className="flex items-center gap-1">
         <Image
-          src="/icons/logo.svg"
-          alt="Eburon logo"
+          src="/images/logo.png"
+          alt="Orbit logo"
           width={32}
           height={32}
           className="max-sm:size-10"
         />
 
-        <p className="text-[26px] font-extrabold text-white max-sm:hidden">
-          Eburon
+        <p className="text-[26px] font-extrabold tracking-wide text-white max-sm:hidden">
+          Orbit
         </p>
       </Link>
 

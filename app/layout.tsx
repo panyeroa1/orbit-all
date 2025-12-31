@@ -19,7 +19,7 @@ const roboto = Roboto({
 });
 
 export const viewport: Viewport = {
-  themeColor: "#0E78F9",
+  themeColor: "#050607",
   colorScheme: "dark",
 };
 
@@ -31,19 +31,19 @@ const AppLayout = ({ children }: Readonly<PropsWithChildren>) => {
       <ClerkProvider
         appearance={{
           layout: {
-            logoImageUrl: "/icons/logo.svg",
+            logoImageUrl: "/images/logo.png",
             socialButtonsVariant: "iconButton",
           },
           variables: {
             colorText: "#FFF",
-            colorPrimary: "#0E78F9",
-            colorBackground: "#1C1F2E",
-            colorInputBackground: "#252A41",
+            colorPrimary: "#2BB6F7",
+            colorBackground: "#0B0D10",
+            colorInputBackground: "#12151B",
             colorInputText: "#FFF",
           },
         }}
       >
-        <body className={cn("min-h-screen w-full bg-dark-2", roboto.className)}>
+        <body className={cn("min-h-screen w-full bg-black", roboto.className)}>
           {children}
           <Toaster />
         </body>

@@ -81,7 +81,7 @@ export const TranslatorModal = ({
             Configure live captions and translation for this call.
           </DialogDescription>
         </DialogHeader>
-        <div className="overflow-y-auto pr-1">
+        <div className="max-h-[60vh] overflow-y-auto pr-1">
           <TranslatorSettingsForm />
         </div>
         <div className="flex justify-end">

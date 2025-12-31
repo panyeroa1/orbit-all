@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 
 export const siteConfig: Metadata = {
-  title: "Eburon Conference",
-  description: "Modern Eburon powered Video calling app",
+  title: "Orbit",
+  description: "Orbit video meetings built for focus and flow",
   keywords: [
     "reactjs",
     "nextjs",
@@ -39,11 +39,11 @@ export const siteConfig: Metadata = {
     "css",
   ] as Array<string>,
   authors: {
-    name: "Eburon Development",
-    url: "https://eburon.ai",
+    name: "Orbit",
+    url: "https://orbit.video",
   },
 } as const;
 
 export const links = {
-  sourceCode: "https://eburon.ai",
+  sourceCode: "https://orbit.video",
 } as const;

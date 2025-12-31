@@ -4,7 +4,7 @@ import { StreamClientProvider } from "@/providers/stream-client-provider";
 
 const RootLayout = ({ children }: PropsWithChildren) => {
   return (
-    <main>
+    <main className="min-h-screen w-full">
       <StreamClientProvider>{children}</StreamClientProvider>
     </main>
   );

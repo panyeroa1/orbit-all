@@ -35,6 +35,8 @@ import { Loader } from "./loader";
 type CallLayoutType = "grid" | "speaker-left" | "speaker-right";
 const MAX_EVENT_TEXT_LENGTH = 4000;
 const PARTIAL_EVENT_THROTTLE_MS = 100;
+const controlButtonClasses =
+  "flex size-11 items-center justify-center rounded-[5px] border border-white/10 bg-white/5 text-white transition hover:bg-white/15";
 
 export const MeetingRoom = () => {
   const router = useRouter();
@@ -300,7 +302,7 @@ export const MeetingRoom = () => {
   if (callingState !== CallingState.JOINED) return <Loader />;
 
   return (
-    <div className="relative h-screen w-full overflow-hidden pt-4 text-white">
+    <div className="relative min-h-screen w-full overflow-hidden text-white">
       {translatorIndicatorEnabled && (
         <div className="absolute left-4 top-4 z-40 rounded-full bg-black/60 px-3 py-1 text-xs font-semibold text-white/90 backdrop-blur-sm">
           {autoTranslateEnabled
@@ -309,13 +311,13 @@ export const MeetingRoom = () => {
         </div>
       )}
 
-      <div className="relative flex size-full items-center justify-center">
-        <div className="flex size-full max-w-[1000px] items-center">
+      <div className="relative flex size-full items-center justify-center px-4 pb-28 pt-4">
+        <div className="flex size-full items-center">
           <CallLayout />
         </div>
 
         <div
-          className={cn("ml-2 hidden h-[calc(100vh_-_86px)]", {
+          className={cn("ml-2 hidden h-[calc(100vh_-_120px)]", {
             "show-block": showParticipants,
           })}
         >
@@ -326,19 +328,17 @@ export const MeetingRoom = () => {
       <CaptionsOverlay />
       <CaptionsTTS localUserId={localParticipant?.userId} />
 
-      <div className="fixed bottom-0 flex w-full flex-wrap items-center justify-center gap-5">
+      <div className="fixed bottom-0 left-0 right-0 z-50 flex w-full flex-wrap items-center justify-center gap-2 border-t border-white/10 bg-black/80 px-3 py-3 backdrop-blur-md">
         <CallControls onLeave={() => router.push("/")} />
 
         <DropdownMenu>
-          <div className="flex items-center">
-            <DropdownMenuTrigger
-              className="cursor-pointer rounded-2xl bg-[#19232D] px-4 py-2 hover:bg-[#4C535B]"
-              title="Call layout"
-            >
-              <LayoutList size={20} className="text-white" />
-            </DropdownMenuTrigger>
-          </div>
-          <DropdownMenuContent className="border-dark-1 bg-dark-1 text-white">
+          <DropdownMenuTrigger
+            className={cn(controlButtonClasses, "cursor-pointer")}
+            title="Call layout"
+          >
+            <LayoutList size={20} className="text-white" />
+          </DropdownMenuTrigger>
+          <DropdownMenuContent className="border-white/10 bg-black/90 text-white">
             {["Grid", "Speaker Left", "Speaker Right"].map((item, i) => (
               <div key={item + "-" + i}>
                 <DropdownMenuItem
@@ -352,7 +352,7 @@ export const MeetingRoom = () => {
                   {item}
                 </DropdownMenuItem>
 
-                <DropdownMenuSeparator className="border-dark-1" />
+                <DropdownMenuSeparator className="border-white/10" />
               </div>
             ))}
           </DropdownMenuContent>
@@ -364,10 +364,11 @@ export const MeetingRoom = () => {
         >
           <div
             className={cn(
-              "relative cursor-pointer rounded-2xl px-4 py-2 transition-colors",
+              "relative cursor-pointer",
+              controlButtonClasses,
               captionsEnabled
                 ? "bg-emerald-500/80 hover:bg-emerald-500"
-                : "bg-[#19232D] hover:bg-[#4C535B]"
+                : "bg-white/5 hover:bg-white/15"
             )}
           >
             <Languages size={20} className="text-white" />
@@ -387,7 +388,7 @@ export const MeetingRoom = () => {
           }
           title="Show participants"
         >
-          <div className="cursor-pointer rounded-2xl bg-[#19232D] px-4 py-2 hover:bg-[#4C535B]">
+          <div className={cn(controlButtonClasses, "cursor-pointer")}>
             <Users size={20} className="text-white" />
           </div>
         </button>
