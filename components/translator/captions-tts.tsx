@@ -65,7 +65,7 @@ export const CaptionsTTS = ({ localUserId }: CaptionsTTSProps) => {
       const audio = new Audio(url);
       audioRef.current = audio;
       audioUrlRef.current = url;
-      audio.playsInline = true;
+      (audio as HTMLMediaElement & { playsInline?: boolean }).playsInline = true;
       audio.crossOrigin = "anonymous";
 
       audio.onended = () => {
@@ -104,7 +104,7 @@ export const CaptionsTTS = ({ localUserId }: CaptionsTTSProps) => {
         void playNext();
       }
     }
-  }, []);
+  }, [setIsTtsPlaying]);
 
   useEffect(() => {
     if (!ttsEnabled) {

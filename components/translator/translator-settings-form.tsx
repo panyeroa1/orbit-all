@@ -24,6 +24,8 @@ export const TranslatorSettingsForm = () => {
   const setSpeakerLang = useTranslatorStore((state) => state.setSpeakerLang);
   const ttsEnabled = useTranslatorStore((state) => state.ttsEnabled);
   const ttsVoice = useTranslatorStore((state) => state.ttsVoice);
+  const cartesiaVoice = useTranslatorStore((state) => state.ttsVoice);
+  const setCartesiaVoice = useTranslatorStore((state) => state.setTtsVoice);
   const setTtsEnabled = useTranslatorStore((state) => state.setTtsEnabled);
   const setTtsVoice = useTranslatorStore((state) => state.setTtsVoice);
 
@@ -150,10 +152,10 @@ export const TranslatorSettingsForm = () => {
             htmlFor="translator-tts"
             className="text-sm font-semibold text-white"
           >
-            Read aloud captions
+            Read aloud captions (Cartesia)
           </label>
           <p className="text-xs text-white/60">
-            Use Gemini Live Audio to speak captions locally.
+            Use Cartesia TTS to speak captions locally.
           </p>
         </div>
         <input
@@ -172,15 +174,15 @@ export const TranslatorSettingsForm = () => {
           htmlFor="translator-voice"
           className="text-sm font-semibold text-white"
         >
-          Gemini voice (optional)
+          Cartesia voice ID
         </label>
         <Input
           id="translator-voice"
           aria-label="Gemini voice"
           title="Gemini voice"
-          value={ttsVoice}
-          onChange={(event) => setTtsVoice(event.target.value)}
-          placeholder="e.g. Orus"
+          value={cartesiaVoice}
+          onChange={(event) => setCartesiaVoice(event.target.value)}
+          placeholder="e.g. 9c7e6604-52c6-424a-9f9f-2c4ad89f3bb9"
           className="mt-2 border-white/10 bg-[#101b24] text-sm text-white placeholder:text-white/40 focus-visible:ring-emerald-500/60"
         />
       </div>
