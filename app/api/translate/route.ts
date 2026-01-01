@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const OLLAMA_API_KEY = process.env.OLLAMA_API_KEY;
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "gpt-oss:120b";
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "gpt-oss-120b-cloud";
 const OLLAMA_API_URL = "https://ollama.com/api";
 // Default to TRUE unless explicitly disabled with "0"
 const USE_GOOGLE_FALLBACK = process.env.GOOGLE_FREE_TRANSLATE !== "0";
@@ -10,7 +10,7 @@ export async function GET() {
   console.log("[TranslateAPI] GET request received");
   return NextResponse.json({ 
     status: "Translation API is active", 
-    primary_provider: "Ollama Cloud (gpt-oss:120b)",
+    primary_provider: "Ollama Cloud (gpt-oss-120b-cloud)",
     fallback_provider: "Google Free" 
   });
 }

@@ -125,7 +125,7 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
           transcript: text,
           voice: {
             mode: "id",
-            id: "9c7e6604-52c6-424a-9f9f-2c4ad89f3bb9"
+            id: "253fb497-77be-4c28-8068-475fa415fb65"
           },
           output_format: {
             container: "wav",
@@ -134,7 +134,7 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
           },
           speed: "normal",
           generation_config: {
-            speed: 1.1,
+            speed: 1,
             volume: 1
           }
         }),

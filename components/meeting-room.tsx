@@ -187,12 +187,12 @@ export const MeetingRoom = () => {
     }
   };
 
+  const [videoError, setVideoError] = useState(false);
+
   if (callingState !== CallingState.JOINED) return <Loader />;
   
   // Prioritize Clerk User ID if available, otherwise fallback to Anonymous Supabase ID
   const effectiveUserId = user?.id || sbUserId || "";
-
-  const [videoError, setVideoError] = useState(false);
 
   return (
     <TTSProvider initialUserId={effectiveUserId}>
