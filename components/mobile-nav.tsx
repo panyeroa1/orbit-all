@@ -34,14 +34,14 @@ export const MobileNav = () => {
             <Link href="/" className="flex items-center gap-1">
               <Image
                 src="/images/logo.png"
-                alt="Orbit logo"
+                alt="Success Class logo"
                 width={32}
                 height={32}
                 className="max-sm:size-10"
               />
 
               <p className="text-[26px] font-extrabold tracking-wide text-white">
-                Orbit
+                Success Class
               </p>
             </Link>
           </SheetClose>

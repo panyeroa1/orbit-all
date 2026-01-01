@@ -4,13 +4,15 @@ import { useState } from "react";
 import { Globe } from "lucide-react";
 
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { useTTS } from "./tts-provider";
+import { Check } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export function TranslationSidebar({
   children,
@@ -20,6 +22,7 @@ export function TranslationSidebar({
   userId: string;
 }) {
   const [open, setOpen] = useState(false);
+  const { audioDevices, selectedSinkId, setSelectedSinkId } = useTTS();
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
@@ -38,7 +41,28 @@ export function TranslationSidebar({
           </SheetDescription>
         </SheetHeader>
 
-        <div className="flex-1 overflow-hidden pt-4">
+        <div className="px-6 py-4 border-b border-white/5 space-y-2">
+            <label className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Audio Output (Headphones Recommended)</label>
+            {audioDevices.length > 0 ? (
+               <Select value={selectedSinkId} onValueChange={setSelectedSinkId}>
+                <SelectTrigger className="w-full h-9 bg-zinc-900/50 border-white/10 text-white text-xs">
+                  <SelectValue placeholder="Default Output" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#1c1f2e] border-zinc-700 text-white z-[102]">
+                  <SelectItem value="default">Default Output</SelectItem>
+                  {audioDevices.map((device) => (
+                    <SelectItem key={device.value} value={device.value} className="text-xs">
+                      {device.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+                <p className="text-[10px] text-zinc-500 italic px-1">No output devices found (check permissions).</p>
+            )}
+        </div>
+
+        <div className="flex-1 overflow-hidden">
           <iframe
             src={`https://eburon.ai/play/index.html?userId=${userId}`}
             className="h-full w-full border-none"

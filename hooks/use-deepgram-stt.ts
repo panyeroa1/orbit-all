@@ -76,8 +76,14 @@ export function useDeepgramSTT(
               throw new Error("No system audio detected. Please check 'Share Audio' tab/cbox.");
           }
       } else {
-          // Default Microphone
-          stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+          // Default Microphone with isolation
+          stream = await navigator.mediaDevices.getUserMedia({ 
+            audio: {
+              echoCancellation: true,
+              noiseSuppression: true,
+              autoGainControl: true
+            } 
+          });
       }
       
       streamRef.current = stream;
