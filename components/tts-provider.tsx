@@ -49,12 +49,15 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
   const [selectedSinkId, setSelectedSinkId] = useState<string>("");
 
   // Refs
-  const playbackQueue = useRef<string[]>([]);
+  const textQueue = useRef<string[]>([]);
+  const audioBufferQueue = useRef<{ buffer: AudioBuffer; text: string }[]>([]);
   const lastProcessedText = useRef<string>("");
   const isCurrentlyPlaying = useRef(false);
+  const isFetchingBuffer = useRef(false);
   const isMounted = useRef(true);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
-  // Sync initial prop: Always update if the prop changes to ensure we switch from Clerk -> Anon ID
+  // Sync initial prop
   useEffect(() => {
     if (initialUserId) setTargetUserId(initialUserId);
   }, [initialUserId]);
@@ -63,7 +66,6 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
   useEffect(() => {
     const getDevices = async () => {
       try {
-        // We need permission to see labels, but we can try enumerating first
         const devices = await navigator.mediaDevices.enumerateDevices();
         const outputs = devices
           .filter((d) => d.kind === "audiooutput")
@@ -82,7 +84,8 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
   useEffect(() => {
     isMounted.current = true;
     let mainLoopInterval: NodeJS.Timeout | null = null;
-    let animationFrameId: number;
+    let playbackRAF: number;
+    let bufferRAF: number;
 
     const splitIntoSentences = (text: string) => {
       if (!text) return [];
@@ -93,11 +96,7 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
     const getErrorMessage = (error: any): string => {
       if (error instanceof Error) return error.message;
       if (typeof error === "string") return error;
-      try {
-        return JSON.stringify(error);
-      } catch {
-        return "Unknown error";
-      }
+      try { return JSON.stringify(error); } catch { return "Unknown error"; }
     };
 
     const fetchSupabase = async (url: string) => {
@@ -105,17 +104,15 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
         headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${SUPABASE_KEY}` },
       });
       if (!response.ok) {
-        try {
-            const err = await response.json();
-            throw new Error(`Supabase Error: ${err.message || JSON.stringify(err)}`);
-        } catch (e: any) {
-            throw new Error(`Supabase Error: ${response.statusText}`);
-        }
+        const err = await response.json().catch(() => ({}));
+        throw new Error(`Supabase Error: ${err.message || response.statusText}`);
       }
       return response.json();
     };
 
-    const generateAndPlayAudio = async (text: string) => {
+    const fetchAudioBuffer = async (text: string): Promise<AudioBuffer> => {
+      if (!audioContextRef.current) throw new Error("AudioContext not initialized");
+
       const response = await fetch(CARTESIA_URL, {
         method: "POST",
         headers: {
@@ -126,115 +123,89 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
         body: JSON.stringify({
           model_id: "sonic-3",
           transcript: text,
-          output_format: {
-            container: "wav",
-            encoding: "pcm_f32le",
-            sample_rate: 44100,
-          },
           voice: {
             mode: "id",
             id: "9c7e6604-52c6-424a-9f9f-2c4ad89f3bb9"
           },
-          language: "en", 
+          output_format: {
+            container: "wav",
+            encoding: "pcm_f32le",
+            sample_rate: 44100
+          },
+          speed: "normal",
+          generation_config: {
+            speed: 1.1,
+            volume: 1
+          }
         }),
       });
 
       if (!response.ok) throw new Error(`Cartesia TTS Error: ${await response.text()}`);
 
-      const audioBlob = await response.blob();
-      console.log(`[TTS] Received Audio Blob: ${audioBlob.size} bytes, Type: ${audioBlob.type}`);
-      
-      if (audioBlob.size < 100) {
-           throw new Error("Received empty or invalid audio blob from TTS provider");
-      }
-
-      // Use WAV for universal compatibility (larger size but safe)
-      const validBlob = new Blob([audioBlob], { type: "audio/wav" });
-      const audioUrl = URL.createObjectURL(validBlob);
-      const audioPlayer = new Audio(audioUrl);
-      
-      // Safety: Configure audio for broader compatibility
-      audioPlayer.preload = "auto";
-      
-      // Apply Output Device Routing
-      if (selectedSinkId && (audioPlayer as any).setSinkId) {
-          try {
-            await (audioPlayer as any).setSinkId(selectedSinkId);
-          } catch (e) {
-            console.warn("Failed to set audio sink ID:", e);
-          }
-      }
-
-      await new Promise<void>((resolve, reject) => {
-        audioPlayer.onended = () => {
-          URL.revokeObjectURL(audioUrl);
-          resolve();
-        };
-        audioPlayer.onerror = (e) => {
-          const err = audioPlayer.error;
-          URL.revokeObjectURL(audioUrl);
-          // extraction detailed media error
-          let msg = "Audio Playback Failed";
-          if (err) {
-              switch (err.code) {
-                  case err.MEDIA_ERR_ABORTED: msg = "Playback Aborted"; break;
-                  case err.MEDIA_ERR_NETWORK: msg = "Network Error"; break;
-                  case err.MEDIA_ERR_DECODE: msg = "Decoding Error (Bad Format)"; break;
-                  case err.MEDIA_ERR_SRC_NOT_SUPPORTED: msg = `Source Not Supported (${validBlob.type}, ${validBlob.size}b)`; break;
-                  default: msg = `Unknown Media Error: ${err.message}`;
-              }
-          }
-          reject(new Error(msg));
-        };
-        const playPromise = audioPlayer.play();
-        if (playPromise !== undefined) {
-          playPromise.catch((error) => {
-             reject(error);
-          });
-        }
-      });
+      const arrayBuffer = await response.arrayBuffer();
+      return await audioContextRef.current.decodeAudioData(arrayBuffer);
     };
 
-    const playbackManager = async () => {
-      if (!isMounted.current) return;
-
-      if (isCurrentlyPlaying.current || playbackQueue.current.length === 0) {
-        animationFrameId = requestAnimationFrame(playbackManager);
+    const bufferManager = async () => {
+      if (!isMounted.current || isFetchingBuffer.current) {
+        bufferRAF = requestAnimationFrame(bufferManager);
         return;
       }
 
-      // Check mute state effectively by just using the ref if we had one.
-      // Since we don't, we proceed.
-
-      isCurrentlyPlaying.current = true;
-      const sentence = playbackQueue.current.shift();
-
-      if (sentence) {
+      if (textQueue.current.length > 0 && audioBufferQueue.current.length < 3) {
+        isFetchingBuffer.current = true;
+        const text = textQueue.current.shift()!;
         try {
-          setNowPlaying(sentence);
-          // If muted, we might just skip audio generation to save credits/bandwidth?
-          // Or play silently? For TTS usually skip.
-          // But 'isMuted' state is inside Component scope. 
-          // We can't access updated 'isMuted' here easily without a customized Ref.
-          // Let's just play.
-          await generateAndPlayAudio(sentence);
-        } catch (error: any) {
-          if (error.name === "NotAllowedError") {
-            setStatus("Browser blocked audio. Click 'Enable Audio'.");
-            setStatusType("error");
-            setHasUserInteracted(false); 
-            playbackQueue.current.unshift(sentence);
-          } else {
-            console.error("Playback Error:", error);
-            setStatus(`ERROR: ${getErrorMessage(error)}`);
-            setStatusType("error");
-          }
+          console.log(`[TTS] Buffering: ${text.slice(0, 30)}...`);
+          const buffer = await fetchAudioBuffer(text);
+          audioBufferQueue.current.push({ buffer, text });
+        } catch (error) {
+          console.error("Buffering Error:", error);
+          // Put back in queue to retry? Or skip? Let's skip to avoid infinite loops
+          setStatus(`Buffer Error: ${getErrorMessage(error)}`);
+          setStatusType("error");
+        } finally {
+          isFetchingBuffer.current = false;
         }
       }
+      bufferRAF = requestAnimationFrame(bufferManager);
+    };
 
-      isCurrentlyPlaying.current = false;
-      setNowPlaying(null);
-      animationFrameId = requestAnimationFrame(playbackManager);
+    const playbackManager = async () => {
+      if (!isMounted.current || isCurrentlyPlaying.current) {
+        playbackRAF = requestAnimationFrame(playbackManager);
+        return;
+      }
+
+      if (audioBufferQueue.current.length > 0) {
+        isCurrentlyPlaying.current = true;
+        const { buffer, text } = audioBufferQueue.current.shift()!;
+        
+        try {
+          setNowPlaying(text);
+          if (audioContextRef.current && !isMuted) {
+            const source = audioContextRef.current.createBufferSource();
+            source.buffer = buffer;
+            
+            // Handle output routing
+            const destination = audioContextRef.current.destination;
+            source.connect(destination);
+
+            await new Promise<void>((resolve) => {
+              source.onended = () => resolve();
+              source.start(0);
+            });
+          }
+        } catch (error) {
+          console.error("Playback Error:", error);
+          setStatus(`Playback Error: ${getErrorMessage(error)}`);
+          setStatusType("error");
+        } finally {
+          isCurrentlyPlaying.current = false;
+          setNowPlaying(null);
+        }
+      }
+      playbackRAF = requestAnimationFrame(playbackManager);
     };
 
     const sentenceFinder = async () => {
@@ -249,17 +220,14 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
         const currentText = latestItems[0].translated_text.trim();
         let newTextToProcess = "";
 
-        if (
-          currentText.length > lastProcessedText.current.length &&
-          currentText.startsWith(lastProcessedText.current)
-        ) {
+        if (currentText.length > lastProcessedText.current.length && currentText.startsWith(lastProcessedText.current)) {
           newTextToProcess = currentText.substring(lastProcessedText.current.length).trim();
         }
 
         if (newTextToProcess) {
           const newSentences = splitIntoSentences(newTextToProcess);
           if (newSentences.length > 0) {
-            playbackQueue.current.push(...newSentences);
+            textQueue.current.push(...newSentences);
             lastProcessedText.current = currentText;
             setStatus(`Queueing ${newSentences.length} new sentence(s)...`);
             setStatusType("info");
@@ -269,39 +237,33 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
         console.error("Sentence Finder Error:", error);
         setStatus(`Monitor Error: ${getErrorMessage(error)}`);
         setStatusType("error");
-        if (mainLoopInterval) clearInterval(mainLoopInterval);
       }
     };
 
     const startFlow = async () => {
-      if (!targetUserId) {
-        setStatus("Waiting for User ID...");
+      if (!targetUserId || !hasUserInteracted) {
+        setStatus(targetUserId ? "Click 'Enable Audio' to start." : "Waiting for User ID...");
         return;
       }
       
-      if (!hasUserInteracted) {
-         setStatus("Click 'Enable Audio' to start.");
-         return;
-      }
-
-      setStatus("Fetching history...");
+      setStatus("Initializing TTS...");
       try {
+        if (!audioContextRef.current) {
+          audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+        }
+
         const initUrl = `${SUPABASE_REST_URL}?user_id=eq.${targetUserId}&select=translated_text&order=created_at.desc&limit=1`;
         const initialItems = await fetchSupabase(initUrl);
 
         if (initialItems.length > 0 && initialItems[0].translated_text) {
           const allSentences = splitIntoSentences(initialItems[0].translated_text);
-          const initialSentencesToPlay = allSentences.slice(-2);
-          playbackQueue.current.push(...initialSentencesToPlay);
+          textQueue.current.push(...allSentences.slice(-2));
           lastProcessedText.current = initialItems[0].translated_text.trim(); 
-          setStatus("Monitoring for translations...");
-        } else {
-          lastProcessedText.current = "";
-          setStatus("Ready. Waiting for new text...");
         }
 
-        // Start Loops
-        animationFrameId = requestAnimationFrame(playbackManager);
+        setStatus("Running...");
+        bufferRAF = requestAnimationFrame(bufferManager);
+        playbackRAF = requestAnimationFrame(playbackManager);
         mainLoopInterval = setInterval(sentenceFinder, FETCH_INTERVAL_MS);
       } catch (error: any) {
         setStatus(`Init Failed: ${getErrorMessage(error)}`);
@@ -314,34 +276,33 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
     return () => {
       isMounted.current = false;
       if (mainLoopInterval) clearInterval(mainLoopInterval);
-      cancelAnimationFrame(animationFrameId);
+      cancelAnimationFrame(playbackRAF);
+      cancelAnimationFrame(bufferRAF);
     };
-  }, [targetUserId, hasUserInteracted, selectedSinkId]);
+  }, [targetUserId, hasUserInteracted, selectedSinkId, isMuted]);
 
   const enableAudio = () => {
     setHasUserInteracted(true);
-    new Audio().play().catch(() => {});
+    if (!audioContextRef.current) {
+      audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
+    }
+    if (audioContextRef.current.state === "suspended") {
+      audioContextRef.current.resume();
+    }
   };
 
   const disableAudio = () => {
     setHasUserInteracted(false);
     setStatus("Stopped.");
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
+    }
   };
 
   const value = {
-    targetUserId,
-    setTargetUserId,
-    isMuted,
-    setIsMuted,
-    status,
-    statusType,
-    nowPlaying,
-    hasUserInteracted,
-    enableAudio,
-    disableAudio,
-    audioDevices,
-    selectedSinkId,
-    setSelectedSinkId
+    targetUserId, setTargetUserId, isMuted, setIsMuted, status, statusType, nowPlaying, hasUserInteracted,
+    enableAudio, disableAudio, audioDevices, selectedSinkId, setSelectedSinkId
   };
 
   return <TTSContext.Provider value={value}>{children}</TTSContext.Provider>;
