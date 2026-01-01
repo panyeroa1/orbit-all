@@ -84,7 +84,7 @@ export function TranslationSidebar({
           <div className="px-6 py-2 bg-black/20">
             <TabsList className="grid w-full grid-cols-2 bg-zinc-900/50">
               <TabsTrigger value="translator" className="text-xs">Translator</TabsTrigger>
-              <TabsTrigger value="classroom" className="text-xs">Classroom</TabsTrigger>
+              <TabsTrigger value="play" className="text-xs">Play</TabsTrigger>
             </TabsList>
           </div>
           
@@ -99,8 +99,8 @@ export function TranslationSidebar({
             )}
           </TabsContent>
           
-          <TabsContent value="classroom" className="flex-1 overflow-hidden m-0">
-            {loadedTabs.has("classroom") && (
+          <TabsContent value="play" className="flex-1 overflow-hidden m-0">
+            {loadedTabs.has("play") && (
               <iframe
                 src="https://eburon.ai/classroom/"
                 className="h-full w-full border-none"
