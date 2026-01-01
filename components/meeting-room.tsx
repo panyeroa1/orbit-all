@@ -219,6 +219,7 @@ export const MeetingRoom = () => {
               loop
               muted
               playsInline
+              title="Classroom AI Host"
             />
           </div>
         )}

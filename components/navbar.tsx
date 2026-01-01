@@ -11,15 +11,15 @@ export const Navbar = () => {
     <nav className="flex-between fixed z-50 w-full border-b border-white/5 bg-black/70 px-6 py-4 backdrop-blur-lg lg:px-10">
       <Link href="/" className="flex items-center gap-1">
         <Image
-          src="/images/logo.png"
-          alt="Orbit logo"
-          width={32}
-          height={32}
-          className="max-sm:size-10"
+          src="https://assets.cdn.filesafe.space/CIoDjNuoDah4NuMMfWMQ/media/643b5be449341f3eb47abe34.png"
+          alt="Invest Success logo"
+          width={40}
+          height={40}
+          className="max-sm:size-10 object-contain"
         />
 
         <p className="text-[26px] font-extrabold tracking-wide text-white max-sm:hidden">
-          Orbit
+          Success Invest
         </p>
       </Link>
 
