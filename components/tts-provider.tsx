@@ -126,12 +126,16 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
         body: JSON.stringify({
           model_id: "sonic-3",
           transcript: text,
-          voice: { mode: "id", id: "9c7e6604-52c6-424a-9f9f-2c4ad89f3bb9" },
           output_format: {
-            container: "mp3",
-            encoding: "mp3",
+            container: "wav",
+            encoding: "pcm_f32le",
             sample_rate: 44100,
           },
+          voice: {
+            mode: "id",
+            id: "9c7e6604-52c6-424a-9f9f-2c4ad89f3bb9"
+          },
+          language: "en", 
         }),
       });
 
@@ -144,8 +148,8 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
            throw new Error("Received empty or invalid audio blob from TTS provider");
       }
 
-      // Force valid MIME type for MP3
-      const validBlob = new Blob([audioBlob], { type: "audio/mpeg" });
+      // Use WAV for universal compatibility (larger size but safe)
+      const validBlob = new Blob([audioBlob], { type: "audio/wav" });
       const audioUrl = URL.createObjectURL(validBlob);
       const audioPlayer = new Audio(audioUrl);
       
