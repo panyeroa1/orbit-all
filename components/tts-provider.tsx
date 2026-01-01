@@ -264,6 +264,12 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
           audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)();
         }
 
+        // Apply Sink ID (Output Routing) if supported
+        if (selectedSinkId && (audioContextRef.current as any).setSinkId) {
+            console.log(`[TTS] Routing to device: ${selectedSinkId}`);
+            await (audioContextRef.current as any).setSinkId(selectedSinkId);
+        }
+
         const initUrl = `${SUPABASE_REST_URL}?user_id=eq.${targetUserId}&select=translated_text&order=created_at.desc&limit=1`;
         const initialItems = await fetchSupabase(initUrl);
 
