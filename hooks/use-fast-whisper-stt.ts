@@ -176,6 +176,7 @@ export function useFastWhisperSTT(
       setError(e instanceof Error ? e.message : "Failed to start Fast Whisper");
       stop();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [language, serverUrl, sourceType, stop, audioStream]);
 
   useEffect(() => {
