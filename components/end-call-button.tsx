@@ -11,25 +11,28 @@ export const EndCallButton = () => {
 
   const { useLocalParticipant } = useCallStateHooks();
   const localParticipant = useLocalParticipant();
+  
+  if (!call) return null;
 
   const isMeetingOwner =
     localParticipant &&
     call?.state.createdBy &&
     localParticipant.userId === call.state.createdBy.id;
 
-  if (!isMeetingOwner) return;
-
   return (
-    <div className="">
+    <div>
       <Button
         onClick={async () => {
-          await call.endCall();
-
+          if (isMeetingOwner) {
+            await call.endCall();
+          } else {
+            await call.leave();
+          }
           router.push("/");
         }}
-        className="bg-red-500"
+        className={isMeetingOwner ? "bg-red-500 hover:bg-red-600 rounded-sm h-11 px-4 text-sm font-medium" : "bg-red-500 hover:bg-red-600 rounded-sm h-11 px-4 text-sm font-medium"}
       >
-        End call for everyone
+        {isMeetingOwner ? "End call for everyone" : "Leave"}
       </Button>
     </div>
   );

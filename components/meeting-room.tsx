@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  CallControls,
   CallParticipantsList,
   CallStatsButton,
   CallingState,
@@ -9,12 +8,17 @@ import {
   SpeakerLayout,
   useCall,
   useCallStateHooks,
+  ToggleAudioPublishingButton,
+  ToggleVideoPublishingButton,
+  ScreenShareButton,
+  RecordCallButton,
 } from "@stream-io/video-react-sdk";
-import { ClosedCaption, LayoutList, Users, ChevronDown, Languages, GraduationCap, Globe } from "lucide-react";
+import { ClosedCaption, LayoutList, Users, ChevronDown, Languages, GraduationCap, Globe, UserPlus } from "lucide-react";
 import { signInAnonymously } from "@/lib/supabase";
 import { useUser } from "@clerk/nextjs";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState, useEffect } from "react";
+import { useToast } from "@/components/ui/use-toast";
 
 import {
   DropdownMenu,
@@ -24,8 +28,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
-import { useWebSpeechSTT } from "@/hooks/use-web-speech-stt";
 import { useDeepgramSTT } from "@/hooks/use-deepgram-stt";
+import { useFastWhisperSTT } from "@/hooks/use-fast-whisper-stt";
+import { useWebSpeechSTT } from "@/hooks/use-web-speech-stt";
 
 import { EndCallButton } from "./end-call-button";
 import { Loader } from "./loader";
@@ -35,7 +40,7 @@ import { TTSProvider } from "./tts-provider";
 import { LiveTranslationDisplay } from "./live-translation-display";
 
 type CallLayoutType = "grid" | "speaker-left" | "speaker-right";
-type STTProvider = "stream" | "webspeech" | "deepgram";
+type STTProvider = "stream" | "webspeech" | "deepgram" | "fastwhisper";
 
 const controlButtonClasses =
   "flex size-11 items-center justify-center rounded-sm border border-white/10 bg-white/5 text-white transition hover:bg-white/15";
@@ -44,11 +49,13 @@ const STT_PROVIDER_LABELS: Record<STTProvider, string> = {
   stream: "Stream",
   webspeech: "Browser",
   deepgram: "Deepgram",
+  fastwhisper: "Fast Whisper",
 };
 
 export const MeetingRoom = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { toast } = useToast();
   const [showParticipants, setShowParticipants] = useState(false);
   const [layout, setLayout] = useState<CallLayoutType>("speaker-left");
   const [sttProvider, setSTTProvider] = useState<STTProvider>("stream");
@@ -81,16 +88,27 @@ export const MeetingRoom = () => {
     useCallCallingState,
     useIsCallCaptioningInProgress,
     useLocalParticipant,
+    useMicrophoneState,
   } = useCallStateHooks();
   const callingState = useCallCallingState();
   const localParticipant = useLocalParticipant();
   const isStreamCaptionsEnabled = useIsCallCaptioningInProgress();
+  const { mediaStream } = useMicrophoneState();
 
   // Web Speech API hook
   const webSpeech = useWebSpeechSTT({ language: "en-US", continuous: true });
 
   // Deepgram hook
-  const deepgram = useDeepgramSTT({ language: "en", model: "nova-2", sourceType: sttSource });
+  const deepgram = useDeepgramSTT(
+    { language: "en", model: "nova-2", sourceType: sttSource },
+    mediaStream
+  );
+
+  // Fast Whisper hook
+  const fastWhisper = useFastWhisperSTT(
+    { language: "en", sourceType: sttSource },
+    mediaStream
+  );
 
   // Determine if any caption system is active
   const isCaptionsActive =
@@ -98,7 +116,9 @@ export const MeetingRoom = () => {
       ? isStreamCaptionsEnabled
       : sttProvider === "webspeech"
         ? webSpeech.isListening
-        : deepgram.isListening;
+        : sttProvider === "deepgram"
+          ? deepgram.isListening
+          : fastWhisper.isListening;
 
   // Update custom transcript when Web Speech or Deepgram provides new text
   useEffect(() => {
@@ -122,6 +142,17 @@ export const MeetingRoom = () => {
       });
     }
   }, [deepgram.transcript, sttProvider, user]);
+
+  useEffect(() => {
+    if (sttProvider === "fastwhisper" && fastWhisper.transcript) {
+      setCustomTranscript({
+        text: fastWhisper.transcript.text,
+        speaker: user?.firstName || user?.username || "You",
+        timestamp: fastWhisper.transcript.timestamp,
+        isFinal: fastWhisper.transcript.isFinal,
+      });
+    }
+  }, [fastWhisper.transcript, sttProvider, user]);
 
   const toggleCaptions = async () => {
     if (!call) return;
@@ -151,6 +182,14 @@ export const MeetingRoom = () => {
           await deepgram.start();
           console.log("Deepgram started");
         }
+      } else if (sttProvider === "fastwhisper") {
+        if (fastWhisper.isListening) {
+          fastWhisper.stop();
+          console.log("Fast Whisper stopped");
+        } else {
+          await fastWhisper.start();
+          console.log("Fast Whisper started");
+        }
       }
     } catch (error) {
       console.error("Failed to toggle captions:", error);
@@ -169,10 +208,31 @@ export const MeetingRoom = () => {
       webSpeech.stop();
     } else if (sttProvider === "deepgram" && deepgram.isListening) {
       deepgram.stop();
+    } else if (sttProvider === "fastwhisper" && fastWhisper.isListening) {
+      fastWhisper.stop();
     }
 
     setSTTProvider(provider);
     setCustomTranscript(null);
+  };
+
+  const copyInviteLink = () => {
+    const meetingId = call?.id || "";
+    const meetingUrl = `${window.location.origin}/meeting/${meetingId}`;
+    const inviteText = `Join the Success Class Meeting!\n\nMeeting Link: ${meetingUrl}\nMeeting ID: ${meetingId}`;
+    
+    navigator.clipboard.writeText(inviteText).then(() => {
+      toast({
+        title: "Invite Copied!",
+        description: "Meeting link and ID copied to clipboard.",
+      });
+    }).catch(() => {
+      toast({
+        title: "Failed to copy",
+        description: "Please copy the link manually.",
+        variant: "destructive",
+      });
+    });
   };
 
   const isPersonalRoom = !!searchParams.get("personal");
@@ -264,7 +324,12 @@ export const MeetingRoom = () => {
       )}
 
       <div className="fixed bottom-0 left-0 right-0 z-50 flex w-full flex-wrap items-center justify-center gap-2 border-t border-white/10 bg-black/80 px-3 py-3 backdrop-blur-md">
-        <CallControls onLeave={() => router.push("/")} />
+        <div className="flex items-center gap-2">
+          <ToggleAudioPublishingButton />
+          <ToggleVideoPublishingButton />
+          <ScreenShareButton />
+          <RecordCallButton />
+        </div>
 
         <DropdownMenu>
           <DropdownMenuTrigger
@@ -364,9 +429,19 @@ export const MeetingRoom = () => {
               >
                 Deepgram (Cloud)
               </DropdownMenuItem>
+              <DropdownMenuSeparator className="border-white/10" />
+              <DropdownMenuItem
+                className={cn(
+                  "cursor-pointer",
+                  sttProvider === "fastwhisper" && "bg-white/10"
+                )}
+                onClick={() => handleProviderChange("fastwhisper")}
+              >
+                Fast Whisper (Real-time)
+              </DropdownMenuItem>
               
-              {/* Source Selection (Deepgram Only) */}
-              {sttProvider === "deepgram" && (
+              {/* Source Selection (Deepgram & Fast Whisper) */}
+              {(sttProvider === "deepgram" || sttProvider === "fastwhisper") && (
                 <>
                   <DropdownMenuSeparator className="border-white/10" />
                   <div className="px-2 py-1.5 text-xs font-semibold text-gray-400">
@@ -438,6 +513,16 @@ export const MeetingRoom = () => {
           </div>
         </button>
 
+        {/* Invite Link Button */}
+        <button
+          onClick={copyInviteLink}
+          title="Copy invite link"
+        >
+          <div className={cn(controlButtonClasses, "cursor-pointer")}>
+            <UserPlus size={20} className="text-white" />
+          </div>
+        </button>
+
         {/* Classroom Mode Toggle */}
         <button
           onClick={() => setIsClassroomActive(!isClassroomActive)}
@@ -450,7 +535,7 @@ export const MeetingRoom = () => {
           </div>
         </button>
 
-        {!isPersonalRoom && <EndCallButton />}
+        <EndCallButton />
       </div>
       </div>
     </TTSProvider>

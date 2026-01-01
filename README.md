@@ -1,8 +1,8 @@
 <a name="readme-top"></a>
 
-# Orbit - Modern Next.js powered Video calling app
+# Success Class - Modern Next.js powered Video calling app
 
-![Orbit - Modern Next.js powered Video calling app](/.github/images/img_main.png "Orbit - Modern Next.js powered Video calling app")
+![Success Class - Modern Next.js powered Video calling app](/.github/images/img_main.png "Success Class - Modern Next.js powered Video calling app")
 
 [![Ask Me Anything!](https://flat.badgen.net/static/Ask%20me/anything?icon=github&color=black&scale=1.01)](https://github.com/sanidhyy "Ask Me Anything!")
 [![GitHub license](https://flat.badgen.net/github/license/sanidhyy/zoom-clone?icon=github&color=black&scale=1.01)](https://github.com/sanidhyy/zoom-clone/blob/main/LICENSE "GitHub license")
@@ -233,7 +233,7 @@ GEMINI_TTS_VOICE=Orus
 
 ## :wrench: Stats
 
-[![Stats for Orbit](/.github/images/stats.svg "Stats for Orbit")](https://pagespeed.web.dev/analysis?url=https://clone-yoom.netlify.app "Stats for Orbit")
+[![Stats for Success Class](/.github/images/stats.svg "Stats for Success Class")](https://pagespeed.web.dev/analysis?url=https://clone-yoom.netlify.app "Stats for Success Class")
 
 ## :raised_hands: Contribute
 
@@ -241,7 +241,7 @@ You might encounter some bugs while using this app. You are more than welcome to
 
 ## :gem: Acknowledgements
 
-Useful resources and dependencies that are used in Orbit.
+Useful resources and dependencies that are used in Success Class.
 
 - [@clerk/nextjs](https://www.npmjs.com/package/@clerk/nextjs): ^5.1.3
 - [@radix-ui/react-dialog](https://www.npmjs.com/package/@radix-ui/react-dialog): ^1.0.5

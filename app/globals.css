@@ -66,7 +66,7 @@ body::before {
 
 .str-video__participant-view {
   max-width: none;
-  border-radius: 16px;
+  border-radius: 4px;
 }
 
 .str-video__call {
@@ -88,7 +88,7 @@ body::before {
 .str-video__participant-list {
   background-color: rgba(7, 8, 10, 0.9);
   padding: 10px;
-  border-radius: 10px;
+  border-radius: 4px;
   color: white;
   height: 100%;
 }
@@ -102,15 +102,14 @@ body::before {
 .str-video__call-controls__button {
   height: 44px;
   width: 44px;
-  border-radius: 5px !important;
-  background-color: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  transition: background-color 150ms ease, transform 150ms ease;
+  border-radius: 4px !important;
+  background-color: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  transition: background-color 150ms ease;
 }
 
 .str-video__call-controls__button:hover {
-  background-color: rgba(255, 255, 255, 0.16);
-  transform: translateY(-1px);
+  background-color: rgba(255, 255, 255, 0.15);
 }
 
 .str-video__call-controls__button--danger {

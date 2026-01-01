@@ -15,14 +15,14 @@ export const Navbar = () => {
       <Link href={logoHref} className="flex items-center gap-1">
         <Image
           src="https://assets.cdn.filesafe.space/CIoDjNuoDah4NuMMfWMQ/media/643b5be449341f3eb47abe34.png"
-          alt="Eburon Logo"
+          alt="Success Class Logo"
           width={40}
           height={40}
           className="max-sm:size-10 object-contain"
         />
 
         <p className="text-[26px] font-extrabold tracking-wide text-white max-sm:hidden">
-          Eburon
+          Success Class
         </p>
       </Link>
 

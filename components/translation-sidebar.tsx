@@ -56,7 +56,7 @@ export function TranslationSidebar({
               <Languages size={24} />
             </div>
             <div>
-              <SheetTitle className="text-xl font-bold text-white tracking-tight">Eburon AI Assistant</SheetTitle>
+              <SheetTitle className="text-xl font-bold text-white tracking-tight">Success Class AI Assistant</SheetTitle>
               <p className="text-xs text-zinc-500 font-medium">Real-time Translation & Classroom</p>
             </div>
           </div>
@@ -94,7 +94,7 @@ export function TranslationSidebar({
                 src={`https://eburon.ai/play/index.html?userId=${userId}`}
                 className="h-full w-full border-none"
                 allow="autoplay; clipboard-write; encrypted-media; fullscreen; microphone; camera"
-                title="Eburon Translator"
+                title="Success Class Translator"
               />
             )}
           </TabsContent>
@@ -105,7 +105,7 @@ export function TranslationSidebar({
                 src="https://eburon.ai/classroom/"
                 className="h-full w-full border-none"
                 allow="autoplay; clipboard-write; encrypted-media; fullscreen; microphone; camera"
-                title="Eburon Classroom"
+                title="Success Class Classroom"
               />
             )}
           </TabsContent>

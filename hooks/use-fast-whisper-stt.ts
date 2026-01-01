@@ -2,34 +2,36 @@
 
 import { useEffect, useRef, useState, useCallback } from "react";
 
-interface DeepgramTranscript {
+interface FastWhisperTranscript {
   text: string;
   isFinal: boolean;
   timestamp: number;
-  confidence: number;
+  language?: string;
 }
 
-interface UseDeepgramSTTOptions {
+interface UseFastWhisperSTTOptions {
   language?: string;
-  model?: string;
+  serverUrl?: string;
   sourceType?: "microphone" | "system" | "both";
 }
 
-interface UseDeepgramSTTReturn {
-  transcript: DeepgramTranscript | null;
+interface UseFastWhisperSTTReturn {
+  transcript: FastWhisperTranscript | null;
   isListening: boolean;
   start: () => Promise<void>;
   stop: () => void;
   error: string | null;
 }
 
-export function useDeepgramSTT(
-  options: UseDeepgramSTTOptions = {},
-  audioStream: MediaStream | null = null
-): UseDeepgramSTTReturn {
-  const { language = "en", model = "nova-2", sourceType = "microphone" } = options;
+const DEFAULT_WHISPER_URL = process.env.NEXT_PUBLIC_FAST_WHISPER_WS_URL || "wss://whisper.eburon.ai/ws";
 
-  const [transcript, setTranscript] = useState<DeepgramTranscript | null>(null);
+export function useFastWhisperSTT(
+  options: UseFastWhisperSTTOptions = {},
+  audioStream: MediaStream | null = null
+): UseFastWhisperSTTReturn {
+  const { language = "en", serverUrl = DEFAULT_WHISPER_URL, sourceType = "microphone" } = options;
+
+  const [transcript, setTranscript] = useState<FastWhisperTranscript | null>(null);
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -66,34 +68,24 @@ export function useDeepgramSTT(
     setError(null);
 
     try {
-      // Get temporary token from our API
-      const tokenResponse = await fetch("/api/deepgram");
-      if (!tokenResponse.ok) {
-        const errorData = await tokenResponse.json();
-        throw new Error(errorData.error || "Failed to get Deepgram token");
-      }
-      const { key } = await tokenResponse.json();
-
       let stream: MediaStream;
 
       if (sourceType === "both") {
-        // Mix microphone and system audio
         let micStream = audioStream;
         if (!micStream) {
             micStream = await navigator.mediaDevices.getUserMedia({ 
-                audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } 
+            audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } 
             });
         }
         
         const systemStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
         
         if (systemStream.getAudioTracks().length === 0) {
-          if (!audioStream) micStream.getTracks().forEach(t => t.stop()); // Only stop if we created it
+          if (!audioStream) micStream.getTracks().forEach(t => t.stop());
           systemStream.getTracks().forEach(t => t.stop());
           throw new Error("No system audio detected. Please check 'Share Audio' checkbox.");
         }
 
-        // Use Web Audio API to mix both streams
         const audioContext = new AudioContext();
         audioContextRef.current = audioContext;
         const destination = audioContext.createMediaStreamDestination();
@@ -104,17 +96,14 @@ export function useDeepgramSTT(
         micSource.connect(destination);
         systemSource.connect(destination);
 
-        // Keep result stream
         stream = destination.stream;
-        // Store for cleanup (but don't stop passed audioStream!)
         streamRef.current = new MediaStream([
-            ...(audioStream ? [] : micStream.getTracks()), 
+            ...(audioStream ? [] : micStream.getTracks()),
             ...systemStream.getTracks(), 
             ...stream.getTracks()
         ]);
 
       } else if (sourceType === "system") {
-        // Capture System Audio
         stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
         if (stream.getAudioTracks().length === 0) {
           stream.getTracks().forEach(t => t.stop());
@@ -122,13 +111,8 @@ export function useDeepgramSTT(
         }
         streamRef.current = stream;
       } else {
-        // Default Microphone (or provided stream)
         if (audioStream) {
             stream = audioStream;
-            // Do NOT set streamRef.current if we don't want to stop it on cleanup! 
-            // OR we handle cleanup carefully.
-            // If we set streamRef.current, stop() will called tracks.stop().
-            // generally we shouldn't stop the main call stream.
         } else {
             stream = await navigator.mediaDevices.getUserMedia({ 
             audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } 
@@ -137,16 +121,15 @@ export function useDeepgramSTT(
         }
       }
 
-      // Connect to Deepgram WebSocket
-      const wsUrl = `wss://api.deepgram.com/v1/listen?model=${model}&language=${language}&smart_format=true&interim_results=true`;
-      const socket = new WebSocket(wsUrl, ["token", key]);
+      // Connect to Fast Whisper WebSocket
+      const wsUrl = `${serverUrl}?language=${language}`;
+      const socket = new WebSocket(wsUrl);
       socketRef.current = socket;
 
       socket.onopen = () => {
-        console.log("Deepgram WebSocket connected");
+        console.log("[FastWhisper] WebSocket connected");
         setIsListening(true);
 
-        // Start recording and sending audio
         const mediaRecorder = new MediaRecorder(stream, {
           mimeType: "audio/webm",
         });
@@ -164,38 +147,36 @@ export function useDeepgramSTT(
       socket.onmessage = (event) => {
         try {
           const data = JSON.parse(event.data);
-          if (data.channel?.alternatives?.[0]) {
-            const alternative = data.channel.alternatives[0];
-            if (alternative.transcript) {
-              setTranscript({
-                text: alternative.transcript,
-                isFinal: data.is_final || false,
-                timestamp: Date.now(),
-                confidence: alternative.confidence || 0,
-              });
-            }
+          // Fast Whisper typically returns: { text: string, is_final: boolean, language: string }
+          if (data.text) {
+            setTranscript({
+              text: data.text,
+              isFinal: data.is_final || data.isFinal || false,
+              timestamp: Date.now(),
+              language: data.language,
+            });
           }
         } catch (e) {
-          console.error("Error parsing Deepgram message:", e);
+          console.error("[FastWhisper] Error parsing message:", e);
         }
       };
 
       socket.onerror = (event) => {
-        console.error("Deepgram WebSocket error:", event);
-        setError("Deepgram connection error");
+        console.error("[FastWhisper] WebSocket error:", event);
+        setError("Fast Whisper connection error");
         stop();
       };
 
       socket.onclose = () => {
-        console.log("Deepgram WebSocket closed");
+        console.log("[FastWhisper] WebSocket closed");
         setIsListening(false);
       };
     } catch (e) {
-      console.error("Failed to start Deepgram STT:", e);
-      setError(e instanceof Error ? e.message : "Failed to start Deepgram");
+      console.error("[FastWhisper] Failed to start:", e);
+      setError(e instanceof Error ? e.message : "Failed to start Fast Whisper");
       stop();
     }
-  }, [language, model, sourceType, stop, audioStream]);
+  }, [language, serverUrl, sourceType, stop, audioStream]);
 
   useEffect(() => {
     return () => {

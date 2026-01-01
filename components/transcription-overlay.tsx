@@ -23,7 +23,7 @@ interface CustomTranscript {
 }
 
 interface TranscriptionOverlayProps {
-  sttProvider: "stream" | "webspeech" | "deepgram";
+  sttProvider: "stream" | "webspeech" | "deepgram" | "fastwhisper";
   customTranscript: CustomTranscript | null;
   userId?: string;
   targetLanguage?: string;

@@ -23,7 +23,7 @@ const MeetingIdPage = ({ params }: MeetingIdPageProps) => {
 
   useEffect(() => {
     if (!isCallLoading && call) {
-      const hasSetup = sessionStorage.getItem(`Eburon-setup-complete-${params.id}`);
+      const hasSetup = sessionStorage.getItem(`Success-Class-setup-complete-${params.id}`);
       if (hasSetup === "true") {
         call.join().then(() => {
             setIsSetupComplete(true);
@@ -39,7 +39,7 @@ const MeetingIdPage = ({ params }: MeetingIdPageProps) => {
 
   const handleSetupComplete = () => {
       setIsSetupComplete(true);
-      sessionStorage.setItem(`Eburon-setup-complete-${params.id}`, "true");
+      sessionStorage.setItem(`Success-Class-setup-complete-${params.id}`, "true");
   };
 
   if (!isLoaded || isCallLoading) return <Loader />;

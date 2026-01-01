@@ -1,5 +1,5 @@
 {
-  "name": "zoom-clone",
+  "name": "success-class",
   "version": "1.0.1",
   "private": true,
   "scripts": {
@@ -13,7 +13,7 @@
     "email": "sanidhya.verma12345@gmail.com",
     "url": "https://github.com/sanidhyy"
   },
-  "description": "Modern Next.js powered Video calling app",
+  "description": "Success Class - Modern Next.js powered Video calling app",
   "keywords": [
     "reactjs",
     "nextjs",
@@ -26,7 +26,7 @@
     "radix-ui",
     "cn",
     "clsx",
-    "zoom-clone",
+    "success-class",
     "realtime-video",
     "realtime-chat",
     "live-audio",

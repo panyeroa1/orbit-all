@@ -1,16 +1,16 @@
 import type { Metadata } from "next";
 
 export const siteConfig: Metadata = {
-  title: "Eburon",
-  description: "Eburon: Real Estate Investment Mentorship & Hands-on Training",
+  title: "Success Class",
+  description: "Success Class: Real Estate Investment Mentorship & Hands-on Training",
   keywords: [
-    "eburon",
+    "success class",
     "mentorship",
     "denver",
     "hands-on training",
   ] as Array<string>,
   authors: {
-    name: "Eburon",
+    name: "Success Class",
     url: "https://eburon.ai",
   },
 } as const;

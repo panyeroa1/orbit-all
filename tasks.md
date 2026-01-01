@@ -312,3 +312,253 @@ End log:
 - Changed: Swapped Eburon Avatar for direct full-screen video (https://eburon.ai/claude/video.mp4).
 - Tests: npm run lint & build.
 - Status: DONE
+
+------------------------------------------------------------
+
+Task ID: T-0020
+Title: Fast Whisper STT & Multi-TTS Providers
+Status: DONE
+Owner: Miles
+Related repo or service: Success Class
+Branch: main
+Created: 2026-01-01 14:00
+Last updated: 2026-01-01 15:30
+
+START LOG (fill this before you start coding)
+
+Timestamp: 2026-01-01 14:00
+Current behavior or state:
+- STT limited to Stream and WebSpeech.
+- TTS limited to basic browser synthesis or limited providers.
+
+Plan and scope for this task:
+- Implement Fast Whisper STT using WebSocket hook.
+- Integrate Google Translate as fallback/primary integration.
+- Add ElevenLabs, Play.ai, and Gemini TTS providers.
+- Implement UI selectors for providers.
+
+Files or modules expected to change:
+- hooks/use-fast-whisper-stt.ts
+- components/meeting-room.tsx
+- components/tts-provider.tsx
+- components/transcription-overlay.tsx
+
+Risks or things to watch out for:
+- WebSocket stability.
+- API latencies.
+
+WORK CHECKLIST
+
+- [x] Create useFastWhisperSTT hook
+- [x] Integrate multiple TTS providers (ElevenLabs, Play.ai, Gemini)
+- [x] Add UI controls for provider switching
+- [x] Verify audio pipeline
+
+END LOG (fill this after you finish coding and testing)
+
+Timestamp: 2026-01-01 15:30
+Summary of what actually changed:
+- Added comprehensive `useFastWhisperSTT` hook.
+- Implemented `TTSProvider` with support for Cartesia, ElevenLabs, Play.ai, and Gemini.
+- Added API routes for secure TTS streaming.
+- Integrated translation overlay with Supabase storage.
+
+Files actually modified:
+- hooks/use-fast-whisper-stt.ts
+- components/meeting-room.tsx
+- components/tts-provider.tsx
+- components/transcription-overlay.tsx
+- app/api/tts/*
+- app/api/translate/route.ts
+
+How it was tested:
+- Manual testing of each provider in a live meeting.
+- npm run build.
+
+Test result:
+- PASS
+
+Known limitations or follow-up tasks:
+- None
+
+------------------------------------------------------------
+
+Task ID: T-0021
+Title: Rebranding to Success Class & UI Polish
+Status: DONE
+Owner: Miles
+Related repo or service: Success Class
+Branch: main
+Created: 2026-01-01 15:30
+Last updated: 2026-01-01 16:30
+
+START LOG
+
+Timestamp: 2026-01-01 15:30
+Current behavior or state:
+- Branding is "Orbit" or "Eburon".
+- UI buttons are rounded/inconsistent.
+- Missing invite button in controls.
+
+Plan and scope for this task:
+- Replace "Orbit"/"Eburon" with "Success Class" across all UI and metadata.
+- Standardize buttons to square (rounded-sm) style.
+- Add Copy Invite Link button to bottom navbar.
+
+Files or modules expected to change:
+- app/(root)/page.tsx
+- components/navbar.tsx
+- components/mobile-nav.tsx
+- components/meeting-room.tsx
+- config/index.ts
+- components/ui/button.tsx
+- globals.css
+
+Risks or things to watch out for:
+- Breaking CSS layouts.
+- Missing deep branding references.
+
+WORK CHECKLIST
+
+- [x] Rename branding in Navbar/Footer/Meta
+- [x] Update Button component style
+- [x] Add Invite Button
+- [x] Verify visual consistency
+
+END LOG
+
+Timestamp: 2026-01-01 16:30
+Summary of what actually changed:
+- Globally rebranded to "Success Class".
+- Updated `Button` and `CallControls` to use `rounded-sm` (4px) square styling.
+- Added `Copy` button to meeting controls with toast feedback.
+- Cleaned up README and package.json.
+
+Files actually modified:
+- components/ui/button.tsx
+- components/meeting-room.tsx
+- components/navbar.tsx
+- components/mobile-nav.tsx
+- config/index.ts
+- globals.css
+- README.md
+- package.json
+
+How it was tested:
+- Visual inspection of UI.
+- npm run lint && npm run build.
+
+Test result:
+- PASS
+
+Known limitations or follow-up tasks:
+- None
+
+------------------------------------------------------------
+
+Task ID: T-0022
+Title: Fix TTS Latency (Next Sentence Logic)
+Status: DONE
+Owner: Miles
+Related repo or service: Success Class
+Branch: main
+Created: 2026-01-01 16:40
+Last updated: 2026-01-01 16:50
+
+START LOG
+
+Timestamp: 2026-01-01 16:40
+Current behavior or state:
+- TTS catches up on last 2 sentences on initialization, causing delay/overlap.
+
+Plan and scope for this task:
+- Modify `TTSProvider` to skip historical text on init.
+- Only synthesize new translations arriving after connection.
+
+Files or modules expected to change:
+- components/tts-provider.tsx
+
+Risks or things to watch out for:
+- Missing the very first new sentence if timing is tight.
+
+WORK CHECKLIST
+
+- [x] Update `startFlow` logic to set baseline only.
+- [x] Verify no old audio plays on start.
+
+END LOG
+
+Timestamp: 2026-01-01 16:50
+Summary of what actually changed:
+- Updated `TTSProvider` to set `lastProcessedText` baseline without queuing historical sentences.
+- TTS now waits for the next NEW translation instant.
+
+Files actually modified:
+- components/tts-provider.tsx
+
+How it was tested:
+- npm run build.
+- Manual verification of logic flow.
+
+Test result:
+- PASS
+
+Known limitations or follow-up tasks:
+- None
+
+------------------------------------------------------------
+
+Task ID: T-0023
+Title: Refine Meeting Controls
+Status: DONE
+Owner: Miles
+Related repo or service: Success Class
+Branch: main
+Created: 2026-01-01 17:00
+Last updated: 2026-01-01 17:15
+
+START LOG
+
+Timestamp: 2026-01-01 17:00
+Current behavior or state:
+- Redundant standard 'Leave' button visible alongside custom 'End Call'.
+- Invite uses generic 'Copy' icon.
+
+Plan and scope for this task:
+- Replace CallControls with granular buttons to remove standard Leave button.
+- Update EndCallButton to support 'Leave' action for guests.
+- Add specific 'UserPlus' invite icon.
+
+Files or modules expected to change:
+- components/meeting-room.tsx
+- components/end-call-button.tsx
+
+Risks or things to watch out for:
+- Guest leaving functionality must be maintained.
+
+WORK CHECKLIST
+
+- [x] Create granular control bar
+- [x] Update EndCallButton logic
+- [x] Add Invite Icon
+
+END LOG
+
+Timestamp: 2026-01-01 17:15
+Summary of what actually changed:
+- Replaced CallControls with local composition (Mic, Cam, Screen, Record).
+- Updated EndCallButton to validly handle non-owners by leaving the call.
+- Replaced Copy icon with UserPlus for invitation.
+
+Files actually modified:
+- components/meeting-room.tsx
+- components/end-call-button.tsx
+
+How it was tested:
+- npm run build.
+
+Test result:
+- PASS
+
+Known limitations or follow-up tasks:
+- None

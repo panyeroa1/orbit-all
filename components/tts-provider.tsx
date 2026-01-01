@@ -9,6 +9,8 @@ const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishabl
 const SUPABASE_REST_URL = `${SUPABASE_URL}/rest/v1/translations`;
 const FETCH_INTERVAL_MS = 2000;
 
+type TTSProviderType = "cartesia" | "elevenlabs" | "playai" | "gemini";
+
 interface TTSContextType {
   targetUserId: string;
   setTargetUserId: (id: string) => void;
@@ -24,6 +26,8 @@ interface TTSContextType {
   selectedSinkId: string;
   setSelectedSinkId: (id: string) => void;
   latestTranslatedText: string;
+  ttsProvider: TTSProviderType;
+  setTTSProvider: (provider: TTSProviderType) => void;
 }
 
 const TTSContext = createContext<TTSContextType | undefined>(undefined);
@@ -48,6 +52,7 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
   const [audioDevices, setAudioDevices] = useState<{ label: string; value: string }[]>([]);
   const [selectedSinkId, setSelectedSinkId] = useState<string>("");
   const [latestTranslatedText, setLatestTranslatedText] = useState<string>("");
+  const [ttsProvider, setTTSProvider] = useState<TTSProviderType>("cartesia");
 
   // Refs
   const textQueue = useRef<string[]>([]);
@@ -114,39 +119,66 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
 
     const fetchAudioBuffer = async (text: string): Promise<AudioBuffer> => {
       if (!audioContextRef.current) throw new Error("AudioContext not initialized");
-      const cartesiaKey = process.env.CARTESIA_API_KEY || "sk_car_ozgewtgpHZpoY1qdEQXi9x";
 
-      const response = await fetch(CARTESIA_URL, {
-        method: "POST",
-        headers: {
-          "Cartesia-Version": "2025-04-16",
-          "X-API-Key": cartesiaKey,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model_id: "sonic-3",
-          transcript: text,
-          voice: {
-            mode: "id",
-            id: "253fb497-77be-4c28-8068-475fa415fb65"
-          },
-          output_format: {
-            container: "wav",
-            encoding: "pcm_f32le",
-            sample_rate: 44100
-          },
-          speed: "normal",
-          generation_config: {
-            speed: 1,
-            volume: 1
-          }
-        }),
-      });
+      let audioData: ArrayBuffer;
 
-      if (!response.ok) throw new Error(`Cartesia TTS Error: ${await response.text()}`);
+      switch (ttsProvider) {
+        case "elevenlabs": {
+          const response = await fetch("/api/tts/elevenlabs", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text }),
+          });
+          if (!response.ok) throw new Error(`ElevenLabs TTS Error: ${await response.text()}`);
+          audioData = await response.arrayBuffer();
+          break;
+        }
+        case "playai": {
+          const response = await fetch("/api/tts/playai", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text }),
+          });
+          if (!response.ok) throw new Error(`Play.ai TTS Error: ${await response.text()}`);
+          audioData = await response.arrayBuffer();
+          break;
+        }
+        case "gemini": {
+          const response = await fetch("/api/tts/gemini", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text }),
+          });
+          if (!response.ok) throw new Error(`Gemini TTS Error: ${await response.text()}`);
+          audioData = await response.arrayBuffer();
+          break;
+        }
+        case "cartesia":
+        default: {
+          const cartesiaKey = process.env.CARTESIA_API_KEY || "sk_car_ozgewtgpHZpoY1qdEQXi9x";
+          const response = await fetch(CARTESIA_URL, {
+            method: "POST",
+            headers: {
+              "Cartesia-Version": "2025-04-16",
+              "X-API-Key": cartesiaKey,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              model_id: "sonic-3",
+              transcript: text,
+              voice: { mode: "id", id: "253fb497-77be-4c28-8068-475fa415fb65" },
+              output_format: { container: "wav", encoding: "pcm_f32le", sample_rate: 44100 },
+              speed: "normal",
+              generation_config: { speed: 1, volume: 1 }
+            }),
+          });
+          if (!response.ok) throw new Error(`Cartesia TTS Error: ${await response.text()}`);
+          audioData = await response.arrayBuffer();
+          break;
+        }
+      }
 
-      const arrayBuffer = await response.arrayBuffer();
-      return await audioContextRef.current.decodeAudioData(arrayBuffer);
+      return await audioContextRef.current.decodeAudioData(audioData);
     };
 
     const bufferManager = async () => {
@@ -272,10 +304,10 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
         const initUrl = `${SUPABASE_REST_URL}?user_id=eq.${targetUserId}&select=translated_text&order=created_at.desc&limit=1`;
         const initialItems = await fetchSupabase(initUrl);
 
+        // Set baseline to skip historical text - only synthesize NEW translations
         if (initialItems.length > 0 && initialItems[0].translated_text) {
-          const allSentences = splitIntoSentences(initialItems[0].translated_text);
-          textQueue.current.push(...allSentences.slice(-2));
-          lastProcessedText.current = initialItems[0].translated_text.trim(); 
+          lastProcessedText.current = initialItems[0].translated_text.trim();
+          console.log("[TTS] Baseline set - waiting for new translations...");
         }
 
         setStatus("Running...");
@@ -296,7 +328,7 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
       cancelAnimationFrame(playbackRAF);
       cancelAnimationFrame(bufferRAF);
     };
-  }, [targetUserId, hasUserInteracted, selectedSinkId, isMuted]);
+  }, [targetUserId, hasUserInteracted, selectedSinkId, isMuted, ttsProvider]);
 
   const enableAudio = () => {
     setHasUserInteracted(true);
@@ -319,7 +351,8 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
 
   const value = {
     targetUserId, setTargetUserId, isMuted, setIsMuted, status, statusType, nowPlaying, hasUserInteracted,
-    enableAudio, disableAudio, audioDevices, selectedSinkId, setSelectedSinkId, latestTranslatedText
+    enableAudio, disableAudio, audioDevices, selectedSinkId, setSelectedSinkId, latestTranslatedText,
+    ttsProvider, setTTSProvider
   };
 
   return <TTSContext.Provider value={value}>{children}</TTSContext.Provider>;

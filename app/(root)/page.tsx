@@ -46,7 +46,7 @@ export default function LandingPage() {
             <h1 className="text-5xl lg:text-7xl font-extrabold tracking-tight leading-[1.1]">
               Master Real Estate <br />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-400 via-blue-400 to-emerald-400">
-                Eburon Success
+                Success Class
               </span>
             </h1>
 
@@ -104,7 +104,7 @@ export default function LandingPage() {
       <section className="py-24 px-6 lg:px-10 bg-zinc-950/50" id="how-it-works">
          <div className="max-w-7xl mx-auto space-y-16">
             <div className="text-center space-y-4">
-               <h2 className="text-4xl font-bold tracking-tight">How we build <span className="text-purple-400">Eburon Success</span></h2>
+               <h2 className="text-4xl font-bold tracking-tight">How we build <span className="text-purple-400">Success Class</span></h2>
                <p className="text-zinc-400 max-w-2xl mx-auto">Unlike other &quot;seminars&quot;, we take you into the field. You learn by doing on actual investment properties.</p>
             </div>
 
@@ -147,13 +147,13 @@ export default function LandingPage() {
          <div className="max-w-7xl mx-auto flex flex-col items-center gap-6">
             <Image
               src="https://assets.cdn.filesafe.space/CIoDjNuoDah4NuMMfWMQ/media/643b5be449341f3eb47abe34.png"
-              alt="Eburon Logo"
+              alt="Success Class Logo"
               width={40}
               height={40}
               className="object-contain opacity-50"
             />
             <p className="text-zinc-500 text-sm italic">
-               &copy; 2026 Eburon. All rights reserved. <br />
+               &copy; 2026 Success Class. All rights reserved. <br />
                Tailored Real Estate Mentorship based in Denver, CO.
             </p>
          </div>
