@@ -21,6 +21,9 @@ interface TTSContextType {
   hasUserInteracted: boolean;
   enableAudio: () => void;
   disableAudio: () => void;
+  audioDevices: { label: string; value: string }[];
+  selectedSinkId: string;
+  setSelectedSinkId: (id: string) => void;
 }
 
 const TTSContext = createContext<TTSContextType | undefined>(undefined);
@@ -40,6 +43,10 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
   const [statusType, setStatusType] = useState<"info" | "error">("info");
   const [nowPlaying, setNowPlaying] = useState<string | null>(null);
   const [hasUserInteracted, setHasUserInteracted] = useState(false);
+  
+  // Audio Output Routing
+  const [audioDevices, setAudioDevices] = useState<{ label: string; value: string }[]>([]);
+  const [selectedSinkId, setSelectedSinkId] = useState<string>("");
 
   // Refs
   const playbackQueue = useRef<string[]>([]);
@@ -51,6 +58,26 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
   useEffect(() => {
     if (initialUserId) setTargetUserId(initialUserId);
   }, [initialUserId]);
+
+  // Enumerate Audio Devices
+  useEffect(() => {
+    const getDevices = async () => {
+      try {
+        // We need permission to see labels, but we can try enumerating first
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const outputs = devices
+          .filter((d) => d.kind === "audiooutput")
+          .map((d) => ({ label: d.label || `Speaker ${d.deviceId.slice(0, 4)}...`, value: d.deviceId }));
+        setAudioDevices(outputs);
+      } catch (e) {
+        console.warn("Failed to enumerate audio devices:", e);
+      }
+    };
+
+    getDevices();
+    navigator.mediaDevices.addEventListener("devicechange", getDevices);
+    return () => navigator.mediaDevices.removeEventListener("devicechange", getDevices);
+  }, []);
 
   useEffect(() => {
     isMounted.current = true;
@@ -122,6 +149,15 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
       
       // Safety: Configure audio for broader compatibility
       audioPlayer.preload = "auto";
+      
+      // Apply Output Device Routing
+      if (selectedSinkId && (audioPlayer as any).setSinkId) {
+          try {
+            await (audioPlayer as any).setSinkId(selectedSinkId);
+          } catch (e) {
+            console.warn("Failed to set audio sink ID:", e);
+          }
+      }
 
       await new Promise<void>((resolve, reject) => {
         audioPlayer.onended = () => {
@@ -296,7 +332,10 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
     nowPlaying,
     hasUserInteracted,
     enableAudio,
-    disableAudio
+    disableAudio,
+    audioDevices,
+    selectedSinkId,
+    setSelectedSinkId
   };
 
   return <TTSContext.Provider value={value}>{children}</TTSContext.Provider>;

@@ -25,9 +25,17 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { TARGET_LANGUAGES } from "@/constants/languages";
 import { cn } from "@/lib/utils";
 import { AutoPlayingTTS } from "./autoplaying-tts";
+import { useTTS } from "./tts-provider";
 
 interface TranslationSidebarProps {
   children: React.ReactNode;
@@ -44,6 +52,8 @@ export function TranslationSidebar({
 }: TranslationSidebarProps) {
   const [open, setOpen] = useState(false);
   const [comboboxOpen, setComboboxOpen] = useState(false);
+  
+  const { audioDevices, selectedSinkId, setSelectedSinkId } = useTTS();
 
   const handleSelect = (value: string) => {
     onLanguageSelect(value);
@@ -129,8 +139,32 @@ export function TranslationSidebar({
                 </Command>
               </PopoverContent>
             </Popover>
-             <p className="text-xs text-zinc-500">
+            <p className="text-xs text-zinc-500">
               Select the language you want to read.
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <h3 className="text-sm font-medium text-zinc-300">Audio Output</h3>
+            {audioDevices.length > 0 ? (
+               <Select value={selectedSinkId} onValueChange={setSelectedSinkId}>
+                <SelectTrigger className="w-full bg-zinc-900/50 border-white/10 text-white">
+                  <SelectValue placeholder="Default Output" />
+                </SelectTrigger>
+                <SelectContent className="bg-[#1c1f2e] border-zinc-700 text-white z-[102]">
+                  <SelectItem value="default">Default Output</SelectItem>
+                  {audioDevices.map((device) => (
+                    <SelectItem key={device.value} value={device.value}>
+                      {device.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+                <p className="text-xs text-zinc-500 italic">No output devices found (check permissions).</p>
+            )}
+             <p className="text-xs text-zinc-500">
+              Route TTS audio to separate speakers to avoid echo.
             </p>
           </div>
           
