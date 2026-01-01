@@ -213,14 +213,16 @@ export const MeetingRoom = () => {
         {isClassroomActive && (
           <div className="fixed inset-4 z-40 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-3xl border border-white/20 overflow-hidden shadow-2xl shadow-purple-500/20">
             <video 
-              src="https://eburon.ai/claude/video.mp4"
               className="size-full object-cover"
               autoPlay
               loop
               muted
               playsInline
               title="Classroom AI Host"
-            />
+            >
+              <source src="https://eburon.ai/claude/video.mp4" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
           </div>
         )}
 
