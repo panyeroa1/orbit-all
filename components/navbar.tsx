@@ -1,4 +1,4 @@
-import { SignedIn, UserButton } from "@clerk/nextjs";
+import { SignedIn, UserButton, useAuth } from "@clerk/nextjs";
 import Image from "next/image";
 import Link from "next/link";
 
@@ -7,9 +7,12 @@ import { links } from "@/config";
 import { MobileNav } from "./mobile-nav";
 
 export const Navbar = () => {
+  const { isSignedIn } = useAuth();
+  const logoHref = isSignedIn ? "/home" : "/";
+
   return (
     <nav className="flex-between fixed z-50 w-full border-b border-white/5 bg-black/70 px-6 py-4 backdrop-blur-lg lg:px-10">
-      <Link href="/" className="flex items-center gap-1">
+      <Link href={logoHref} className="flex items-center gap-1">
         <Image
           src="https://assets.cdn.filesafe.space/CIoDjNuoDah4NuMMfWMQ/media/643b5be449341f3eb47abe34.png"
           alt="Invest Success logo"

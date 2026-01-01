@@ -4,18 +4,26 @@ import { useAuth } from "@clerk/nextjs";
 import { MoveRight, Star, Users, Building, GraduationCap } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Navbar } from "@/components/navbar";
 
 export default function LandingPage() {
   const { isSignedIn } = useAuth();
+  const router = useRouter();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!mounted) return null;
+  useEffect(() => {
+    if (mounted && isSignedIn) {
+      router.push("/home");
+    }
+  }, [mounted, isSignedIn, router]);
+
+  if (!mounted || isSignedIn) return null;
 
   return (
     <div className="min-h-screen bg-black text-white font-[Roboto,sans-serif]">
