@@ -370,8 +370,6 @@ export const MeetingRoom = () => {
 
         {/* Translation Sidebar */}
         <TranslationSidebar 
-          selectedLanguage={translationLanguage} 
-          onLanguageSelect={setTranslationLanguage}
           userId={effectiveUserId}
         >
           <div
