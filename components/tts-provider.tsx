@@ -214,37 +214,29 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
 
       isPolling.current = true;
       try {
-        const url = `${SUPABASE_REST_URL}?user_id=eq.${targetUserId}&select=translated_text,created_at&order=created_at.desc&limit=5`;
+        const url = `${SUPABASE_REST_URL}?user_id=eq.${targetUserId}&select=translated_text,created_at&order=created_at.desc&limit=1`;
         const latestItems = await fetchSupabase(url);
 
-        if (latestItems.length === 0) return;
+        if (latestItems.length === 0 || !latestItems[0].translated_text) return;
 
-        // Process in chronological order (descending created_at)
-        const reversedItems = [...latestItems].reverse();
-        
-        for (const item of reversedItems) {
-          if (!item.translated_text) continue;
-          const currentText = item.translated_text.trim();
-          
-          // If we haven't seen this full text block yet, or it's longer than before
-          if (currentText !== lastProcessedText.current) {
-            let newParts = "";
-            if (lastProcessedText.current && currentText.startsWith(lastProcessedText.current)) {
-              newParts = currentText.substring(lastProcessedText.current.length).trim();
-            } else {
-              newParts = currentText;
-            }
+        const currentText = latestItems[0].translated_text.trim();
+        let newTextToProcess = "";
 
-            if (newParts) {
-              const newSentences = splitIntoSentences(newParts);
-              if (newSentences.length > 0) {
-                console.log(`[TTS] Queuing news: ${newSentences.length} sentences.`);
-                textQueue.current.push(...newSentences);
-                lastProcessedText.current = currentText;
-                setStatus(`Streaming... (${textQueue.current.length} queued)`);
-                setStatusType("info");
-              }
-            }
+        // Strictly additive logic (as per user snippet)
+        if (currentText.length > lastProcessedText.current.length && currentText.startsWith(lastProcessedText.current)) {
+           newTextToProcess = currentText.substring(lastProcessedText.current.length).trim();
+        } else if (!lastProcessedText.current) {
+           newTextToProcess = currentText;
+        }
+
+        if (newTextToProcess) {
+          const newSentences = splitIntoSentences(newTextToProcess);
+          if (newSentences.length > 0) {
+            console.log(`[TTS] Queuing news: ${newSentences.length} sentences.`);
+            textQueue.current.push(...newSentences);
+            lastProcessedText.current = currentText; // Update baseline immediately
+            setStatus(`Streaming... (${textQueue.current.length} queued)`);
+            setStatusType("info");
           }
         }
       } catch (error: any) {
