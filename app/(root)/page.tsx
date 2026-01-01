@@ -1,7 +1,7 @@
 "use client";
 
 import { useAuth } from "@clerk/nextjs";
-import { MoveRight, Star, Users, Building, GraduationCap, ArrowRight } from "lucide-react";
+import { MoveRight, Star, Users, Building, GraduationCap } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 import { useEffect, useState } from "react";
