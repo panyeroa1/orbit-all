@@ -31,6 +31,7 @@ import { EndCallButton } from "./end-call-button";
 import { Loader } from "./loader";
 import { TranscriptionOverlay } from "./transcription-overlay";
 import { TranslationSidebar } from "./translation-sidebar";
+import { TTSProvider } from "./tts-provider";
 
 type CallLayoutType = "grid" | "speaker-left" | "speaker-right";
 type STTProvider = "stream" | "webspeech" | "deepgram";
@@ -185,28 +186,34 @@ export const MeetingRoom = () => {
   };
 
   if (callingState !== CallingState.JOINED) return <Loader />;
+  
+  // Prioritize Clerk User ID if available, otherwise fallback to Anonymous Supabase ID
+  const effectiveUserId = user?.id || sbUserId || "";
 
   return (
-    <div className="relative min-h-screen w-full overflow-hidden text-white">
-      <div className="relative flex size-full items-center justify-center px-4 pb-28 pt-4">
-        <div className="flex size-full items-center">
-          <CallLayout />
-        </div>
+    <TTSProvider initialUserId={effectiveUserId}>
+      <div className="relative min-h-screen w-full overflow-hidden text-white">
+        <div className="relative flex size-full items-center justify-center px-4 pb-28 pt-4">
+          <div className="flex size-full items-center">
+            <CallLayout />
+          </div>
 
-        <div
-          className={cn("ml-2 hidden h-[calc(100vh_-_120px)]", {
-            "show-block": showParticipants,
-          })}
-        >
-          <CallParticipantsList onClose={() => setShowParticipants(false)} />
+          <div
+            className={cn("ml-2 hidden h-[calc(100vh_-_120px)]", {
+              "show-block": showParticipants,
+            })}
+          >
+            <CallParticipantsList onClose={() => setShowParticipants(false)} />
+          </div>
         </div>
-      </div>
 
       <TranscriptionOverlay
         sttProvider={sttProvider}
         customTranscript={customTranscript}
         userId={user?.id}
         targetLanguage={translationLanguage}
+        meetingId={call?.id || ""}
+        sbUserId={effectiveUserId}
       />
 
       <div className="fixed bottom-0 left-0 right-0 z-50 flex w-full flex-wrap items-center justify-center gap-2 border-t border-white/10 bg-black/80 px-3 py-3 backdrop-blur-md">
@@ -318,6 +325,7 @@ export const MeetingRoom = () => {
         <TranslationSidebar 
           selectedLanguage={translationLanguage} 
           onLanguageSelect={setTranslationLanguage}
+          userId={effectiveUserId}
         >
           <div
             className={cn(controlButtonClasses, "cursor-pointer flex items-center justify-center gap-1", {
@@ -347,6 +355,7 @@ export const MeetingRoom = () => {
 
         {!isPersonalRoom && <EndCallButton />}
       </div>
-    </div>
+      </div>
+    </TTSProvider>
   );
 };

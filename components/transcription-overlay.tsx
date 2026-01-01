@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallStateHooks, useCall } from "@stream-io/video-react-sdk";
+import { useCallStateHooks } from "@stream-io/video-react-sdk";
 import { useEffect, useState, useRef, useCallback } from "react";
 import { saveTranscription } from "@/lib/transcription-service";
 import { getTranslation, saveTranslation } from "@/lib/translate-service";
@@ -28,6 +28,8 @@ interface TranscriptionOverlayProps {
   customTranscript: CustomTranscript | null;
   userId?: string;
   targetLanguage?: string;
+  meetingId: string;
+  sbUserId?: string | null;
 }
 
 const CAPTION_DISPLAY_DURATION = 5000;
@@ -38,31 +40,38 @@ export const TranscriptionOverlay = ({
   customTranscript,
   userId,
   targetLanguage = "off",
+  meetingId,
+  sbUserId: propSbUserId,
 }: TranscriptionOverlayProps) => {
   const { useCallClosedCaptions } = useCallStateHooks();
-  const call = useCall();
+  // const call = useCall(); // Removed redundant call
   const streamCaptions = useCallClosedCaptions();
   const [lines, setLines] = useState<CaptionLine[]>([]);
-  const [sbUserId, setSbUserId] = useState<string | null>(null);
+  const [internalSbUserId, setInternalSbUserId] = useState<string | null>(null);
+  
+  // Use prop if available, otherwise internal state
+  const sbUserId = propSbUserId || internalSbUserId;
+
   const lastCaptionRef = useRef<string>("");
   const savedIdsRef = useRef<Set<string>>(new Set());
 
-  const roomName = call?.id || "unknown";
-  const meetingId = call?.id || "unknown";
+  const roomName = meetingId || "unknown"; // Use prop
 
-  // Initialize anonymous auth on mount
+  // Initialize anonymous auth on mount (Only if prop is missing, or as fallback)
   useEffect(() => {
+    if (propSbUserId) return; // Skip if provided by parent
+
     let mounted = true;
     signInAnonymously().then(({ success, user }) => {
       if (mounted && success && user) {
         console.log(`[TranscriptionOverlay] Authenticated with id: ${user.id} (Meeting: ${meetingId})`);
-        setSbUserId(user.id);
+        setInternalSbUserId(user.id);
       } else if (mounted) {
         console.warn("[TranscriptionOverlay] Supabase auth failed (check credentials/internet).");
       }
     });
     return () => { mounted = false; };
-  }, [meetingId]);
+  }, [meetingId, propSbUserId]);
 
   // Handle translation and saving (Strict: Fetch -> Translate -> Save)
   const processTranscriptionFlow = useCallback(
@@ -90,7 +99,8 @@ export const TranscriptionOverlay = ({
           );
 
           // 2. Save translation to Supabase
-          const activeUserId = userId || sbUserId || line.speakerId || "anonymous";
+          // STRICT: Always prefer the Supabase ID (sbUserId) if available, as that's what TTS listens to.
+          const activeUserId = sbUserId || userId || line.speakerId || "anonymous";
           const { success, error } = await saveTranslation({
             user_id: activeUserId,
             meeting_id: meetingId,

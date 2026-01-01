@@ -27,17 +27,20 @@ import {
 } from "@/components/ui/popover";
 import { TARGET_LANGUAGES } from "@/constants/languages";
 import { cn } from "@/lib/utils";
+import { AutoPlayingTTS } from "./autoplaying-tts";
 
 interface TranslationSidebarProps {
   children: React.ReactNode;
   onLanguageSelect: (lang: string) => void;
   selectedLanguage: string;
+  userId: string;
 }
 
 export function TranslationSidebar({
   children,
   onLanguageSelect,
   selectedLanguage,
+  userId,
 }: TranslationSidebarProps) {
   const [open, setOpen] = useState(false);
   const [comboboxOpen, setComboboxOpen] = useState(false);
@@ -129,6 +132,10 @@ export function TranslationSidebar({
              <p className="text-xs text-zinc-500">
               Select the language you want to read.
             </p>
+          </div>
+          
+          <div className="border-t border-white/10 pt-6">
+             <AutoPlayingTTS userId={userId} />
           </div>
         </div>
       </SheetContent>
