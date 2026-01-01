@@ -46,7 +46,7 @@ export const MeetingModal = ({
           {children}
 
           <Button
-            className="bg-blue-1"
+            className="bg-blue-1 rounded-sm"
             onClick={handleClick}
             disabled={isLoading}
           >

@@ -32,12 +32,13 @@ import { Loader } from "./loader";
 import { TranscriptionOverlay } from "./transcription-overlay";
 import { TranslationSidebar } from "./translation-sidebar";
 import { TTSProvider } from "./tts-provider";
+import { LiveTranslationDisplay } from "./live-translation-display";
 
 type CallLayoutType = "grid" | "speaker-left" | "speaker-right";
 type STTProvider = "stream" | "webspeech" | "deepgram";
 
 const controlButtonClasses =
-  "flex size-11 items-center justify-center rounded-[5px] border border-white/10 bg-white/5 text-white transition hover:bg-white/15";
+  "flex size-11 items-center justify-center rounded-sm border border-white/10 bg-white/5 text-white transition hover:bg-white/15";
 
 const STT_PROVIDER_LABELS: Record<STTProvider, string> = {
   stream: "Stream",
@@ -53,7 +54,7 @@ export const MeetingRoom = () => {
   const [sttProvider, setSTTProvider] = useState<STTProvider>("stream");
   const [translationLanguage, setTranslationLanguage] = useState<string>("off");
   const [sbUserId, setSbUserId] = useState<string | null>(null);
-  const [sttSource, setSttSource] = useState<"microphone" | "system">("microphone");
+  const [sttSource, setSttSource] = useState<"microphone" | "system" | "both">("microphone");
   const [isClassroomActive, setIsClassroomActive] = useState(false);
 
   // Initialize early anonymous auth
@@ -213,7 +214,7 @@ export const MeetingRoom = () => {
 
         {/* Video Pinned AI Host */}
         {isClassroomActive && (
-          <div className="fixed inset-4 z-40 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-3xl border border-white/20 overflow-hidden shadow-2xl shadow-purple-500/20">
+          <div className="fixed inset-4 z-40 flex items-center justify-center bg-black/40 backdrop-blur-md rounded-sm border border-white/20 overflow-hidden shadow-2xl shadow-purple-500/20">
             {!videoError ? (
               <video 
                 src="https://eburon.ai/claude/video.mp4"
@@ -252,6 +253,15 @@ export const MeetingRoom = () => {
         meetingId={call?.id || ""}
         sbUserId={effectiveUserId}
       />
+
+      {/* Live TTS & UI Display Overlay */}
+      {translationLanguage !== "off" && (
+        <div className="fixed top-24 left-1/2 -translate-x-1/2 z-50 w-full max-w-md px-4 pointer-events-none">
+          <div className="pointer-events-auto">
+            <LiveTranslationDisplay />
+          </div>
+        </div>
+      )}
 
       <div className="fixed bottom-0 left-0 right-0 z-50 flex w-full flex-wrap items-center justify-center gap-2 border-t border-white/10 bg-black/80 px-3 py-3 backdrop-blur-md">
         <CallControls onLeave={() => router.push("/")} />
@@ -380,6 +390,16 @@ export const MeetingRoom = () => {
                     title="Share tab/screen audio"
                   >
                     System Audio (Share Tab)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className={cn(
+                      "cursor-pointer pl-6",
+                      sttSource === "both" && "text-emerald-400"
+                    )}
+                    onClick={() => setSttSource("both")}
+                    title="Mix microphone and system audio"
+                  >
+                    Both (Mic + System)
                   </DropdownMenuItem>
                 </>
               )}

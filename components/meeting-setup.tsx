@@ -51,7 +51,7 @@ export const MeetingSetup = ({ setIsSetupComplete }: MeetingSetupProps) => {
       </div>
 
       <Button
-        className="rounded-md bg-green-500 px-4 py-2.5"
+        className="rounded-sm bg-green-500 px-4 py-2.5"
         onClick={() => {
           call.join();
 

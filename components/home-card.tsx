@@ -19,12 +19,12 @@ export const HomeCard = ({
   return (
     <button
       className={cn(
-        "flex min-h-[260px] w-full cursor-pointer flex-col justify-between rounded-[14px] p-0 px-4 py-6 text-left xl:max-w-[270px]",
+        "flex min-h-[260px] w-full cursor-pointer flex-col justify-between rounded-sm p-0 px-4 py-6 text-left xl:max-w-[270px]",
         className
       )}
       onClick={handleClick}
     >
-      <div className="flex-center glassmorphism size-12 rounded-[10px]">
+      <div className="flex-center glassmorphism size-12 rounded-sm">
         <Image src={img} alt={title} width={27} height={27} />
       </div>
 

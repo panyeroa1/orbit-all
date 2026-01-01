@@ -3,12 +3,11 @@
 import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 
 // --- CONFIGURATION ---
-const CARTESIA_API_KEY = "sk_car_7AabaMKbctZAy89wTw9Xtf";
 const CARTESIA_URL = "https://api.cartesia.ai/tts/bytes";
 const SUPABASE_URL = "https://rcbuikbjqgykssiatxpo.supabase.co";
-const SUPABASE_KEY = "sb_publishable_uTIwEo4TJBo_YkX-OWN9qQ_5HJvl4c5";
+const SUPABASE_KEY = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "sb_publishable_uTIwEo4TJBo_YkX-OWN9qQ_5HJvl4c5";
 const SUPABASE_REST_URL = `${SUPABASE_URL}/rest/v1/translations`;
-const FETCH_INTERVAL_MS = 3000;
+const FETCH_INTERVAL_MS = 2000;
 
 interface TTSContextType {
   targetUserId: string;
@@ -24,6 +23,7 @@ interface TTSContextType {
   audioDevices: { label: string; value: string }[];
   selectedSinkId: string;
   setSelectedSinkId: (id: string) => void;
+  latestTranslatedText: string;
 }
 
 const TTSContext = createContext<TTSContextType | undefined>(undefined);
@@ -47,6 +47,7 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
   // Audio Output Routing
   const [audioDevices, setAudioDevices] = useState<{ label: string; value: string }[]>([]);
   const [selectedSinkId, setSelectedSinkId] = useState<string>("");
+  const [latestTranslatedText, setLatestTranslatedText] = useState<string>("");
 
   // Refs
   const textQueue = useRef<string[]>([]);
@@ -113,12 +114,13 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
 
     const fetchAudioBuffer = async (text: string): Promise<AudioBuffer> => {
       if (!audioContextRef.current) throw new Error("AudioContext not initialized");
+      const cartesiaKey = process.env.CARTESIA_API_KEY || "sk_car_ozgewtgpHZpoY1qdEQXi9x";
 
       const response = await fetch(CARTESIA_URL, {
         method: "POST",
         headers: {
           "Cartesia-Version": "2025-04-16",
-          "X-API-Key": CARTESIA_API_KEY,
+          "X-API-Key": cartesiaKey,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -235,6 +237,7 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
             console.log(`[TTS] Queuing news: ${newSentences.length} sentences.`);
             textQueue.current.push(...newSentences);
             lastProcessedText.current = currentText; // Update baseline immediately
+            setLatestTranslatedText(currentText); // Synchronize with UI display
             setStatus(`Streaming... (${textQueue.current.length} queued)`);
             setStatusType("info");
           }
@@ -278,7 +281,7 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
         setStatus("Running...");
         bufferRAF = requestAnimationFrame(bufferManager);
         playbackRAF = requestAnimationFrame(playbackManager);
-        mainLoopInterval = setInterval(sentenceFinder, 4000); // 4s interval for less noise
+        mainLoopInterval = setInterval(sentenceFinder, FETCH_INTERVAL_MS);
       } catch (error: any) {
         setStatus(`Init Failed: ${getErrorMessage(error)}`);
         setStatusType("error");
@@ -316,7 +319,7 @@ export function TTSProvider({ children, initialUserId }: { children: React.React
 
   const value = {
     targetUserId, setTargetUserId, isMuted, setIsMuted, status, statusType, nowPlaying, hasUserInteracted,
-    enableAudio, disableAudio, audioDevices, selectedSinkId, setSelectedSinkId
+    enableAudio, disableAudio, audioDevices, selectedSinkId, setSelectedSinkId, latestTranslatedText
   };
 
   return <TTSContext.Provider value={value}>{children}</TTSContext.Provider>;

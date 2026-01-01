@@ -12,7 +12,7 @@ interface DeepgramTranscript {
 interface UseDeepgramSTTOptions {
   language?: string;
   model?: string;
-  sourceType?: "microphone" | "system";
+  sourceType?: "microphone" | "system" | "both";
 }
 
 interface UseDeepgramSTTReturn {
@@ -35,6 +35,7 @@ export function useDeepgramSTT(
   const socketRef = useRef<WebSocket | null>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
 
   const stop = useCallback(() => {
     if (mediaRecorderRef.current) {
@@ -45,6 +46,11 @@ export function useDeepgramSTT(
     if (streamRef.current) {
       streamRef.current.getTracks().forEach((track) => track.stop());
       streamRef.current = null;
+    }
+
+    if (audioContextRef.current) {
+      audioContextRef.current.close();
+      audioContextRef.current = null;
     }
 
     if (socketRef.current) {
@@ -68,25 +74,51 @@ export function useDeepgramSTT(
       const { key } = await tokenResponse.json();
 
       let stream: MediaStream;
-      if (sourceType === "system") {
-          // Capture System Audio (requires video: true for getDisplayMedia, but checks for audio track)
-          stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
-          if (stream.getAudioTracks().length === 0) {
-              stream.getTracks().forEach(t => t.stop());
-              throw new Error("No system audio detected. Please check 'Share Audio' tab/cbox.");
-          }
+
+      if (sourceType === "both") {
+        // Mix microphone and system audio
+        const micStream = await navigator.mediaDevices.getUserMedia({ 
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } 
+        });
+        const systemStream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+        
+        if (systemStream.getAudioTracks().length === 0) {
+          micStream.getTracks().forEach(t => t.stop());
+          systemStream.getTracks().forEach(t => t.stop());
+          throw new Error("No system audio detected. Please check 'Share Audio' checkbox.");
+        }
+
+        // Use Web Audio API to mix both streams
+        const audioContext = new AudioContext();
+        audioContextRef.current = audioContext;
+        const destination = audioContext.createMediaStreamDestination();
+
+        const micSource = audioContext.createMediaStreamSource(micStream);
+        const systemSource = audioContext.createMediaStreamSource(new MediaStream(systemStream.getAudioTracks()));
+
+        micSource.connect(destination);
+        systemSource.connect(destination);
+
+        // Keep original streams for cleanup
+        stream = destination.stream;
+        // Store both for cleanup
+        streamRef.current = new MediaStream([...micStream.getTracks(), ...systemStream.getTracks(), ...stream.getTracks()]);
+
+      } else if (sourceType === "system") {
+        // Capture System Audio
+        stream = await navigator.mediaDevices.getDisplayMedia({ video: true, audio: true });
+        if (stream.getAudioTracks().length === 0) {
+          stream.getTracks().forEach(t => t.stop());
+          throw new Error("No system audio detected. Please check 'Share Audio' checkbox.");
+        }
+        streamRef.current = stream;
       } else {
-          // Default Microphone with isolation
-          stream = await navigator.mediaDevices.getUserMedia({ 
-            audio: {
-              echoCancellation: true,
-              noiseSuppression: true,
-              autoGainControl: true
-            } 
-          });
+        // Default Microphone
+        stream = await navigator.mediaDevices.getUserMedia({ 
+          audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true } 
+        });
+        streamRef.current = stream;
       }
-      
-      streamRef.current = stream;
 
       // Connect to Deepgram WebSocket
       const wsUrl = `wss://api.deepgram.com/v1/listen?model=${model}&language=${language}&smart_format=true&interim_results=true`;

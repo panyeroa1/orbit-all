@@ -22,7 +22,7 @@ export const Sidebar = () => {
               key={item.route}
               href={item.route}
               className={cn(
-                "flex items-center justify-start gap-4 rounded-lg p-4",
+                "flex items-center justify-start gap-4 rounded-sm p-4",
                 {
                   "bg-blue-1": isActive,
                 }

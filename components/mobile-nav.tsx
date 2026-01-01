@@ -34,14 +34,14 @@ export const MobileNav = () => {
             <Link href="/" className="flex items-center gap-1">
               <Image
                 src="/images/logo.png"
-                alt="Success Class logo"
+                alt="Eburon Logo"
                 width={32}
                 height={32}
                 className="max-sm:size-10"
               />
 
               <p className="text-[26px] font-extrabold tracking-wide text-white">
-                Success Class
+                Eburon
               </p>
             </Link>
           </SheetClose>
@@ -58,7 +58,7 @@ export const MobileNav = () => {
                     <Link
                       href={item.route}
                       className={cn(
-                        "flex w-full max-w-60 items-center gap-4 rounded-lg p-4",
+                        "flex w-full max-w-60 items-center gap-4 rounded-sm p-4",
                         {
                           "bg-blue-1": isActive,
                         }
